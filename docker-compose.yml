@@ -1,0 +1,29 @@
+# SCFF — MySQL 8 untuk pengembangan lokal (target: demo akademik, D4/§5.3)
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: scff-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-scff_root_password}
+      MYSQL_DATABASE: ${DB_NAME:-scff}
+      MYSQL_USER: ${DB_USER:-scff_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-scff_dev_password}
+      TZ: Asia/Jakarta
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+07:00
+    volumes:
+      - scff-mysql-data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_ROOT_PASSWORD:-scff_root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  scff-mysql-data:
