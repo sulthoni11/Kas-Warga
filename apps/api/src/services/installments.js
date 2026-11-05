@@ -20,6 +20,10 @@ function toNumber(value) {
   return value === null || value === undefined ? null : Number(value);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Hitung ulang alokasi untuk satu anggota.
  * @returns {Promise<{total:number, paid:number, partial:number}>}
@@ -114,16 +118,56 @@ export async function reconcileMemberInstallments(memberId) {
   }
 }
 
-/** Hitung ulang seluruh anggota aktif pada satu komunitas. */
-export async function reconcileCommunityInstallments(communityId) {
+/**
+ * Versi tahan-gagal-sementara: coba ulang beberapa kali (mis. lock timeout)
+ * sebelum menyerah. Pemanggil tetap menentukan apakah kegagalan final perlu
+ * dilaporkan atau hanya dicatat.
+ */
+export async function reconcileMemberInstallmentsSafe(memberId, options = {}) {
+  const attempts = Math.max(1, Number(options.attempts) || 3);
+  const baseDelayMs = Math.max(0, Number(options.baseDelayMs) || 60);
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await reconcileMemberInstallments(memberId);
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) await sleep(baseDelayMs * attempt);
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Hitung ulang seluruh anggota aktif pada satu komunitas.
+ * Satu anggota gagal tidak menghentikan anggota lain.
+ * @returns {Promise<{members:number, reconciled:number, failed:number}>}
+ */
+export async function reconcileCommunityInstallments(communityId, options = {}) {
   const [rows] = await getPool().query(
     "SELECT id FROM members WHERE community_id = ? AND status = 'ACTIVE' ORDER BY id ASC",
     [communityId],
   );
 
+  let reconciled = 0;
+  let failed = 0;
+
   for (const row of rows) {
-    await reconcileMemberInstallments(Number(row.id));
+    const memberId = Number(row.id);
+    try {
+      await reconcileMemberInstallmentsSafe(memberId, options);
+      reconciled += 1;
+    } catch (error) {
+      failed += 1;
+      if (typeof options.onError === 'function') {
+        options.onError(memberId, error);
+      } else {
+        console.error(`[installments] rekonsiliasi anggota ${memberId} gagal:`, error);
+      }
+    }
   }
 
-  return rows.length;
+  return { members: rows.length, reconciled, failed };
 }

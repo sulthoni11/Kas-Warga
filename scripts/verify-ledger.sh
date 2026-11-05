@@ -25,11 +25,8 @@ if ! docker compose ps --status running --format '{{.Name}}' | grep -q scff-mysq
 fi
 echo "   status: $(docker inspect --format '{{.State.Health.Status}}' scff-mysql)"
 
-echo "== 1/6 migration (sebagai root) =="
-for file in apps/api/migrations/*.sql; do
-  echo "   apply $file"
-  mysql_root scff < "$file"
-done
+echo "== 1/6 migration (sebagai root, tercatat di schema_migrations) =="
+bash scripts/migrate.sh
 
 echo "== 2/6 kunci hak akses tabel ledger =="
 mysql_root scff < db/privileges-ledger.sql

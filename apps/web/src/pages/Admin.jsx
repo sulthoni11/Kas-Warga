@@ -620,13 +620,33 @@ export default function Admin() {
               <span className="font-normal text-sage-500">({allMembers.length})</span>
             </h2>
             {canWrite && (
-              <button
-                type="button"
-                onClick={() => setShowAddMember((current) => !current)}
-                className="rounded-xl border border-sage-300 px-2 py-1 text-xs font-medium text-sage-700"
-              >
-                {showAddMember ? 'Tutup form' : '+ Tambah anggota'}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    runAction('Sinkronkan cicilan', async () => {
+                      const data = await api(
+                        `/api/admin/communities/${communityId}/installments/reconcile`,
+                        { method: 'POST' },
+                      );
+                      const failed = data.failed > 0 ? `, ${data.failed} gagal` : '';
+                      return `Cicilan disinkronkan: ${data.reconciled}/${data.members} anggota${failed}.`;
+                    })
+                  }
+                  className="rounded-xl border border-sage-300 px-2 py-1 text-xs font-medium text-sage-700 disabled:opacity-50"
+                  title="Hitung ulang alokasi setoran ke cicilan untuk semua anggota"
+                >
+                  Sinkronkan cicilan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddMember((current) => !current)}
+                  className="rounded-xl border border-sage-300 px-2 py-1 text-xs font-medium text-sage-700"
+                >
+                  {showAddMember ? 'Tutup form' : '+ Tambah anggota'}
+                </button>
+              </div>
             )}
           </div>
 

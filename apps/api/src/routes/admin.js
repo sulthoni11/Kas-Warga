@@ -4,7 +4,10 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { getPool } from '../db.js';
 import { appendEntry, verifyChain } from '../services/ledger.js';
 import { buildCommunitySummary, buildInstallmentPlan } from '../services/summary.js';
-import { reconcileMemberInstallments } from '../services/installments.js';
+import {
+  reconcileCommunityInstallments,
+  reconcileMemberInstallmentsSafe,
+} from '../services/installments.js';
 import { emitCommunityUpdate } from '../services/events.js';
 import { requireAuth, requireRole } from '../auth/middleware.js';
 import { hashToken } from '../auth/session.js';
@@ -118,6 +121,27 @@ adminRouter.get('/communities/:id/summary', read, async (req, res, next) => {
     const summary = await buildCommunitySummary(id);
     if (!summary) return res.status(404).json({ error: 'COMMUNITY_NOT_FOUND' });
     return res.json(summary);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Menyelaraskan ulang cicilan dengan seluruh setoran CONFIRMED.
+ * Dipakai sebagai tombol pemulihan manual dan oleh cron harian.
+ */
+adminRouter.post('/communities/:id/installments/reconcile', write, async (req, res, next) => {
+  try {
+    const communityId = idParam.parse(req.params.id);
+    if (!(await communityOr404(res, communityId))) return undefined;
+
+    const result = await reconcileCommunityInstallments(communityId, {
+      onError: (memberId, error) =>
+        console.error(`[installments] anggota ${memberId} gagal direkonsiliasi:`, error),
+    });
+
+    emitCommunityUpdate(communityId, { type: 'installments.reconciled' });
+    return res.json(result);
   } catch (error) {
     return next(error);
   }
@@ -414,7 +438,7 @@ adminRouter.post('/deposits', write, async (req, res, next) => {
     );
     if (existing[0]) {
       try {
-        await reconcileMemberInstallments(memberId);
+        await reconcileMemberInstallmentsSafe(memberId);
       } catch (error) {
         console.error(`[installments] rekonsiliasi anggota ${memberId} gagal:`, error);
       }
@@ -455,7 +479,7 @@ adminRouter.post('/deposits', write, async (req, res, next) => {
 
     // Setoran langsung melunasi cicilan tertua anggota (paket terkait bila ada).
     try {
-      await reconcileMemberInstallments(memberId);
+      await reconcileMemberInstallmentsSafe(memberId);
     } catch (error) {
       console.error(`[installments] rekonsiliasi anggota ${memberId} gagal:`, error);
     }
@@ -540,7 +564,7 @@ adminRouter.post('/deposits/:id/correct', write, async (req, res, next) => {
     // Hitung ulang dari seluruh setoran CONFIRMED: yang lama sudah VOIDED,
     // setoran koreksi otomatis menggantikannya.
     try {
-      await reconcileMemberInstallments(memberId);
+      await reconcileMemberInstallmentsSafe(memberId);
     } catch (error) {
       console.error(`[installments] rekonsiliasi anggota ${memberId} gagal:`, error);
     }

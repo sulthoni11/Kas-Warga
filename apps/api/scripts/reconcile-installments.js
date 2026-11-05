@@ -10,13 +10,19 @@ import { reconcileCommunityInstallments } from '../src/services/installments.js'
 
 async function main() {
   const [communities] = await getPool().query('SELECT id, name FROM communities ORDER BY id ASC');
+  let totalFailed = 0;
 
   for (const community of communities) {
-    const members = await reconcileCommunityInstallments(Number(community.id));
-    console.log(`[reconcile] ${community.name} (id ${community.id}): ${members} anggota`);
+    const result = await reconcileCommunityInstallments(Number(community.id));
+    totalFailed += result.failed;
+    const failed = result.failed > 0 ? `, ${result.failed} gagal` : '';
+    console.log(
+      `[reconcile] ${community.name} (id ${community.id}): ${result.reconciled}/${result.members} anggota${failed}`,
+    );
   }
 
   console.log(`[reconcile] selesai untuk ${communities.length} komunitas`);
+  if (totalFailed > 0) process.exitCode = 1;
 }
 
 main()

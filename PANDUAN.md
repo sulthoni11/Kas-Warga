@@ -99,6 +99,10 @@ di tabel **Rekap per RT** juga menampilkan rincian yang sama saat kursor diarahk
 Tunggakan dihitung dari **sisa** cicilan (`amount - paid_amount`) yang sudah lewat jatuh tempo,
 jadi cicilan yang sudah dibayar penuh otomatis hilang dari daftar.
 
+Kalau angka terasa tidak sinkron (mis. setelah impor/ubah data langsung di database), klik
+**Sinkronkan cicilan** di kanan judul **Anggota**. Tombol itu menghitung ulang alokasi setoran
+untuk semua anggota. Cron harian 00:15 juga melakukannya otomatis saat `ENABLE_CRON=true`.
+
 Nomor telepon boleh ditulis seperti kebiasaan sehari-hari: `0812-3456-7890`, `0812 3456 7890`,
 `+62 812 3456 7890`, atau `6281234567890`. Semua bentuk itu disimpan sebagai `+6281234567890`.
 Nomor telepon dan **RT** opsional — boleh dikosongkan. Kalau nomornya tidak masuk akal (mis.
@@ -202,6 +206,7 @@ Satu anggota hanya bisa menerima satu pengingat per hari (dijaga unique key di d
 | RBAC 3 peran | semua endpoint admin | Ketua ditolak `403` saat mencoba menulis. Tidak ada peran yang bisa mengubah ledger |
 | Catat setoran | panel kiri atas | 1 setoran = 1 baris `deposits` + 1 entri `ledger_entries`. Klik ganda tidak menggandakan (idempotency key) |
 | Alokasi setoran → cicilan | otomatis | Setoran CONFIRMED melunasi cicilan tertua. Paket dipilih → hanya paket itu; tanpa paket → semua paket. Sisa pembayaran sebagian disimpan di `paid_amount` |
+| Rekonsiliasi cicilan | tombol **Sinkronkan cicilan** + cron 00:15 | Hitung ulang alokasi semua anggota dari setoran CONFIRMED. Satu anggota gagal tidak menghentikan yang lain |
 | Koreksi setoran | tabel mutasi | Entri `VOID` negatif + entri baru. Entri asli tetap ada selamanya; alokasi cicilan dihitung ulang |
 | Ledger hash-chain | otomatis | Tiap entri menyimpan `prev_hash`; perubahan satu baris merusak semua hash setelahnya |
 | Tiga lapis penguncian | database | (1) akun aplikasi hanya `SELECT`+`INSERT` pada tabel ledger, (2) trigger menolak `UPDATE`/`DELETE` bahkan untuk root, (3) kode tidak pernah menulis `UPDATE` |
@@ -245,10 +250,10 @@ Satu anggota hanya bisa menerima satu pengingat per hari (dijaga unique key di d
 | Notifikasi sukses hilang sendiri | Memang disengaja, 5 detik | Klik **✕** untuk menutup lebih cepat; pesan error **tidak** hilang sendiri |
 | **hapus** anggota tapi masih ada di database | Anggota itu sudah punya setoran | Normal — statusnya jadi `INACTIVE` (riwayat keuangan tidak boleh hilang) |
 | RT ditolak saat tambah anggota | Isian RT bukan angka / lebih dari 3 digit | Isi 1–3 angka saja, contoh `03`; server menjawab `RT_INVALID` |
-| Kolom `rt` belum ada di database | Migrasi 004 belum dijalankan | `bash scripts/verify-ledger.sh` (menjalankan semua file migrasi), lalu `node apps/api/scripts/seed.js` untuk mengisi RT demo |
+| Kolom `rt`/`paid_amount` belum ada di database | Migrasi belum dijalankan | `bash scripts/migrate.sh`, lalu `node apps/api/scripts/seed.js` untuk mengisi data demo |
 | Angka "Terkumpul" aneh setelah koreksi | VOID bernilai negatif | Normal — total dihitung dari ledger, bukan dari jumlah setoran kotor |
 | Sudah bayar tetapi badge tunggakan masih ada | Nominal belum menutup satu cicilan penuh, atau setoran untuk paket lain | Buka rincian badge: sisa nominal ditampilkan. Catat kekurangannya, atau pilih paket yang benar saat menyetor |
-| Tunggakan lama tidak berubah setelah pembayaran | Data lama dibuat sebelum alokasi cicilan | `bash scripts/verify-ledger.sh` lalu `node apps/api/scripts/reconcile-installments.js` |
+| Tunggakan lama tidak berubah setelah pembayaran | Data lama dibuat sebelum alokasi cicilan | `bash scripts/migrate.sh` lalu klik **Sinkronkan cicilan** (atau `node apps/api/scripts/reconcile-installments.js`) |
 | Pengingat selalu 0 terkirim | Semua anggota sudah menerima pengingat hari ini (anti-duplikat) atau tidak ada cicilan jatuh tempo | Buat paket harian dengan jatuh tempo 3 hari lagi, atau tunggu besok — daftar kandidat tetap bisa dilihat di respons `candidates` |
 | Portal warga bilang "Tautan tidak valid atau sudah dicabut" | Token terpotong saat disalin, atau database di-reset | Buat tautan baru (**Buat link publik**) dan pakai tombol **salin tautan**; jangan ketik manual |
 | Portal warga bilang "Tautan tidak lengkap" | Alamat `/s` dibuka tanpa token | Buka tautan utuh dari panel, bukan `/s` saja |

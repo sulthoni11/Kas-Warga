@@ -171,10 +171,13 @@ async function main() {
     // Samakan status cicilan dengan setoran yang sudah ada (termasuk data lama
     // yang dibuat sebelum alokasi setoran diperkenalkan).
     const reconciled = await reconcileCommunityInstallments(Number(existing[0].id));
+    if (reconciled.failed > 0) {
+      throw new Error(`Rekonsiliasi cicilan gagal untuk ${reconciled.failed} anggota`);
+    }
 
     console.log(`Komunitas "${COMMUNITY_NAME}" siap (id ${existing[0].id}).`);
     if (added > 0) console.log(`  paket dilengkapi: ${added}`);
-    console.log(`  cicilan direkonsiliasi: ${reconciled} anggota`);
+    console.log(`  cicilan direkonsiliasi: ${reconciled.reconciled} anggota`);
     console.log(`  paket aktif: ${packageList.map((row) => row.name).join(', ')}`);
     return;
   }
@@ -251,6 +254,9 @@ async function main() {
   // Setoran demo langsung dialokasikan ke cicilan supaya angka tunggakan
   // di dashboard konsisten sejak awal.
   const reconciled = await reconcileCommunityInstallments(communityId);
+  if (reconciled.failed > 0) {
+    throw new Error(`Rekonsiliasi cicilan gagal untuk ${reconciled.failed} anggota`);
+  }
 
   const [counts] = await pool.query(
     'SELECT COUNT(*) AS entries FROM ledger_entries WHERE community_id = ?',
@@ -261,7 +267,7 @@ async function main() {
   console.log(`  komunitas   : ${communityId} (${COMMUNITY_NAME})`);
   console.log(`  anggota     : ${memberIds.length}`);
   console.log(`  paket       : ${packages.length}`);
-  console.log(`  cicilan     : direkonsiliasi untuk ${reconciled} anggota`);
+  console.log(`  cicilan     : direkonsiliasi untuk ${reconciled.reconciled} anggota`);
   console.log(`  entri ledger: ${Number(counts[0].entries)}`);
   console.log('  akun demo   : bendahara@gmail.com / ketua@gmail.com / admin@gmail.com');
   console.log(`  password    : ${DEMO_PASSWORD}`);

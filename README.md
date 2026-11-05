@@ -3,7 +3,7 @@
 Platform pengelolaan dana sosial komunitas dengan **ledger append-only berantai hash**, portal
 transparansi publik, dan penagihan otomatis.
 
-Status: **v0.3.2 — aplikasi berjalan (M1–M4 + alokasi cicilan)**. Dokumen acuan: [`PRD.md`](./PRD.md) v1.1.4.
+Status: **v0.3.3 — aplikasi berjalan (M1–M4 + alokasi cicilan)**. Dokumen acuan: [`PRD.md`](./PRD.md) v1.1.4.
 
 Panduan pemakaian langkah-demi-langkah: [`PANDUAN.md`](./PANDUAN.md).
 
@@ -27,13 +27,15 @@ npm run dev                   # API di :4000 dan web di :5173 (PowerShell, cmd, 
 
 Cek API: <http://localhost:4000/health> · UI: <http://localhost:5173>
 
-Migrasi skema + penguncian hak akses + seluruh uji ledger (rantai, konkurensi, tamper):
+Migrasi skema (sekali per file, tercatat di `schema_migrations`) + penguncian hak akses +
+seluruh uji ledger (rantai, konkurensi, tamper):
 
 ```bash
-bash scripts/verify-ledger.sh
+bash scripts/migrate.sh        # hanya migrasi
+bash scripts/verify-ledger.sh  # migrasi + privileges + uji ledger
 ```
 
-Skrip itu memakai bash — jalankan dari **Git Bash**, bukan PowerShell.
+Kedua skrip memakai bash — jalankan dari **Git Bash**, bukan PowerShell.
 
 ## Akun demo (seed)
 
@@ -89,6 +91,10 @@ apps/
 db/
   init/01-database.sql        database + akun aplikasi (dijalankan image MySQL)
   privileges-ledger.sql       lockdown tabel ledger — jalankan SETELAH migration M2
+scripts/
+  migrate.sh                  runner migrasi + tabel schema_migrations
+  verify-ledger.sh            migrasi + privileges + uji ledger
+  smoke-api.sh                uji API end-to-end
 docker-compose.yml
 ```
 
@@ -108,6 +114,8 @@ docker-compose.yml
 - `scripts/verify-ledger.sh`: migration + privileges + 14 pemeriksaan otomatis (rantai, genesis, konkurensi 10 paralel, penolakan DML, trigger, deteksi tamper, pemulihan).
 - `scripts/smoke-api.sh`: 50+ pemeriksaan API (login, RBAC 403, setoran, idempotensi, alokasi setoran ke cicilan, koreksi + VOID, verifikasi rantai, token publik, SSE, pembuatan paket + cicilan, tambah/hapus anggota dengan normalisasi telepon & RT, rekap per RT, pengingat dummy, CSV, anchor, webhook HMAC, settlement invoice dummy -> ledger idempoten).
 - Alokasi setoran: setiap setoran CONFIRMED (tunai/admin maupun gateway) langsung melunasi cicilan tertua anggota. Setoran dengan paket hanya menyentuh paket itu; tanpa paket menyentuh semua paket. Pembayaran sebagian disimpan di `installments.paid_amount`, status menjadi `PAID` saat lunas. `scripts/reconcile-installments.js` menghitung ulang data lama.
+- Rekonsiliasi tahan-gagal: alokasi dicoba ulang otomatis; tersedia tombol **Sinkronkan cicilan** di panel anggota, endpoint `POST /api/admin/communities/:id/installments/reconcile`, dan cron 00:15 sebagai jaring pengaman. Satu anggota gagal tidak menghentikan anggota lain.
+- Migrasi tercatat di `schema_migrations`; `scripts/migrate.sh` melewati file yang sudah diterapkan sehingga deploy tidak mengulang DDL.
 - UI: login pengurus, panel admin (setoran, koreksi, anggota, paket, pengingat, link publik), dashboard warga dengan SSE.
 
 ## Belum diimplementasikan (sesuai milestone)

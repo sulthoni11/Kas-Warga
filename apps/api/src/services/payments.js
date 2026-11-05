@@ -10,7 +10,7 @@
  */
 import { getPool } from '../db.js';
 import { appendEntry } from './ledger.js';
-import { reconcileMemberInstallments } from './installments.js';
+import { reconcileMemberInstallmentsSafe } from './installments.js';
 import { emitCommunityUpdate } from './events.js';
 
 const LOCK_TIMEOUT_SECONDS = 5;
@@ -243,7 +243,7 @@ export async function settleInvoice({ provider, providerRef, status, amount = nu
     if (deposit && ledgerSeq !== null) {
       // Pembayaran gateway yang sudah CONFIRMED ikut melunasi cicilan.
       try {
-        await reconcileMemberInstallments(deposit.memberId);
+        await reconcileMemberInstallmentsSafe(deposit.memberId);
       } catch (error) {
         console.error(`[installments] rekonsiliasi anggota ${deposit.memberId} gagal:`, error);
       }

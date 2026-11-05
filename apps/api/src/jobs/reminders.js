@@ -3,6 +3,7 @@ import { config } from '../config.js';
 import { getPool } from '../db.js';
 import { waProvider } from '../integrations/whatsapp/index.js';
 import { verifyChain } from '../services/ledger.js';
+import { reconcileCommunityInstallments } from '../services/installments.js';
 
 async function reminderSweep() {
   const pool = getPool();
@@ -47,6 +48,29 @@ async function reminderSweep() {
   console.log(`[cron] pengingat terkirim (dummy): ${sent}`);
 }
 
+/**
+ * Jaring pengaman harian: hitung ulang alokasi setoran -> cicilan untuk semua
+ * komunitas. Menangkap kasus di mana rekonsiliasi saat setoran gagal sementara.
+ */
+async function installmentSweep() {
+  const pool = getPool();
+  const [communities] = await pool.query("SELECT id FROM communities WHERE status = 'ACTIVE'");
+
+  let reconciled = 0;
+  let failed = 0;
+
+  for (const row of communities) {
+    const result = await reconcileCommunityInstallments(Number(row.id), {
+      onError: (memberId, error) =>
+        console.error(`[cron] rekonsiliasi anggota ${memberId} gagal:`, error),
+    });
+    reconciled += result.reconciled;
+    failed += result.failed;
+  }
+
+  console.log(`[cron] rekonsiliasi cicilan: ${reconciled} anggota, ${failed} gagal`);
+}
+
 /** Ancor harian (FR-11): root hash + jumlah entri per komunitas, agar penulisan ulang massal terdeteksi. */
 async function dailyAnchor() {
   const pool = getPool();
@@ -82,12 +106,21 @@ export function startReminderJob() {
     { timezone: 'Asia/Jakarta' },
   );
 
+  const installments = cron.schedule(
+    '15 0 * * *',
+    () =>
+      installmentSweep().catch((error) =>
+        console.error('[cron] gagal rekonsiliasi cicilan:', error),
+      ),
+    { timezone: 'Asia/Jakarta' },
+  );
+
   const anchor = cron.schedule(
     '59 23 * * *',
     () => dailyAnchor().catch((error) => console.error('[cron] gagal anchor harian:', error)),
     { timezone: 'Asia/Jakarta' },
   );
 
-  console.log('[cron] aktif: pengingat 08:00, anchor 23:59 (Asia/Jakarta)');
-  return { reminder, anchor };
+  console.log('[cron] aktif: rekonsiliasi 00:15, pengingat 08:00, anchor 23:59 (Asia/Jakarta)');
+  return { reminder, installments, anchor };
 }

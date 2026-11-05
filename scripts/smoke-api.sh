@@ -94,6 +94,11 @@ RT_GROUPS=$(json rtSummary.0.rt)
 DETAIL_CHECK=$(node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const j=JSON.parse(d);const sum=a=>(a||[]).reduce((n,x)=>n+x.installments,0);const mOk=(j.members||[]).every(m=>Array.isArray(m.arrearsDetail)&&sum(m.arrearsDetail)===m.arrears);const rOk=(j.rtSummary||[]).every(r=>Array.isArray(r.arrearsDetail)&&sum(r.arrearsDetail)===r.arrears);console.log(mOk&&rOk?'ok':'bad')}catch(e){console.log('err')}})" < "$BODY")
 [ "$DETAIL_CHECK" = "ok" ] && pass "summary menyertakan rincian tunggakan per paket (anggota & RT)" || flop "rincian tunggakan" "$DETAIL_CHECK"
 
+code=$(req POST "/api/admin/communities/$COMMUNITY_ID/installments/reconcile")
+RECONCILED=$(json reconciled)
+RECONCILE_FAILED=$(json failed)
+[ "$code" = "200" ] && [ "$RECONCILED" -ge 1 ] && [ "$RECONCILE_FAILED" = "0" ] && pass "rekonsiliasi cicilan manual ($RECONCILED anggota)" || flop "rekonsiliasi cicilan" "$code $(cat "$BODY")"
+
 code=$(req POST "/api/admin/communities/$COMMUNITY_ID/members" '{"name":"Anggota Uji Smoke","phone":"0812-abc"}')
 PHONE_ERR=$(json error)
 [ "$code" = "400" ] && [ "$PHONE_ERR" = "PHONE_INVALID" ] && pass "telepon tidak masuk akal ditolak (PHONE_INVALID)" || flop "validasi telepon" "$code $PHONE_ERR"
@@ -151,6 +156,9 @@ OK=$(json ok)
 code=$(req POST /api/auth/login '{"email":"ketua@gmail.com","password":"12345678"}' "$KJAR")
 code=$(req POST /api/admin/deposits "{\"communityId\":$COMMUNITY_ID,\"memberId\":$MEMBER_ID,\"amount\":10000,\"method\":\"CASH\"}" "$KJAR")
 [ "$code" = "403" ] && pass "peran KETUA ditolak saat menulis setoran (403)" || flop "RBAC ketua" "$code"
+
+code=$(req POST "/api/admin/communities/$COMMUNITY_ID/installments/reconcile" "" "$KJAR")
+[ "$code" = "403" ] && pass "peran KETUA ditolak menyinkronkan cicilan (403)" || flop "RBAC rekonsiliasi" "$code"
 
 code=$(req GET "/api/admin/communities/$COMMUNITY_ID/verify" "" "$KJAR")
 [ "$code" = "200" ] && pass "peran KETUA boleh membaca verifikasi" || flop "RBAC ketua baca" "$code"
