@@ -99,6 +99,18 @@ RECONCILED=$(json reconciled)
 RECONCILE_FAILED=$(json failed)
 [ "$code" = "200" ] && [ "$RECONCILED" -ge 1 ] && [ "$RECONCILE_FAILED" = "0" ] && pass "rekonsiliasi cicilan manual ($RECONCILED anggota)" || flop "rekonsiliasi cicilan" "$code $(cat "$BODY")"
 
+# 2c. rincian cicilan admin (dipakai UI mobile) + analisis keuangan
+code=$(req GET "/api/admin/communities/$COMMUNITY_ID/members/$MEMBER_ID/installments")
+DETAIL_PKGS=$(node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const j=JSON.parse(d);const ok=j.member?.id===Number('$MEMBER_ID')&&(j.installments||[]).length>0&&(j.installments||[]).every(x=>typeof x.packageId==='number'&&typeof x.packageName==='string'&&Number(x.amount)>=Number(x.paidAmount));console.log(ok?'ok':'bad')}catch(e){console.log('err')}})" < "$BODY")
+[ "$code" = "200" ] && [ "$DETAIL_PKGS" = "ok" ] && pass "rincian cicilan admin (member $MEMBER_ID, paket+nama terisi)" || flop "rincian cicilan admin" "$code $DETAIL_PKGS"
+
+code=$(req GET "/api/admin/communities/$COMMUNITY_ID/members/999999/installments")
+[ "$code" = "404" ] && [ "$(json error)" = "MEMBER_NOT_FOUND" ] && pass "rincian cicilan anggota asing ditolak (404)" || flop "rincian anggota asing" "$code"
+
+code=$(req GET "/api/admin/communities/$COMMUNITY_ID/analytics?months=6")
+ANALYTICS_OK=$(node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const j=JSON.parse(d);const ok=j.series?.length===6&&j.series.every(s=>/^\d{4}-\d{2}$/.test(s.month)&&typeof s.collected==='number'&&typeof s.dueRemaining==='number')&&typeof j.installmentStats?.total==='number'&&Array.isArray(j.packages)&&Array.isArray(j.rt);console.log(ok?'ok':'bad')}catch(e){console.log('err')}})" < "$BODY")
+[ "$code" = "200" ] && [ "$ANALYTICS_OK" = "ok" ] && pass "analisis keuangan (6 bulan + stats cicilan)" || flop "analisis keuangan" "$code $ANALYTICS_OK $(cat "$BODY")"
+
 code=$(req POST "/api/admin/communities/$COMMUNITY_ID/members" '{"name":"Anggota Uji Smoke","phone":"0812-abc"}')
 PHONE_ERR=$(json error)
 [ "$code" = "400" ] && [ "$PHONE_ERR" = "PHONE_INVALID" ] && pass "telepon tidak masuk akal ditolak (PHONE_INVALID)" || flop "validasi telepon" "$code $PHONE_ERR"
@@ -107,6 +119,19 @@ code=$(req PATCH "/api/admin/communities/$COMMUNITY_ID/members/$NEW_MEMBER_ID" '
 EDITED_NAME=$(json member.name)
 EDITED_RT=$(json member.rt)
 [ "$code" = "200" ] && [ "$EDITED_NAME" = "Anggota Uji Smoke Edit" ] && [ "$EDITED_RT" = "05" ] && pass "edit anggota: nama & RT diperbarui (RT $EDITED_RT)" || flop "edit anggota" "$code $EDITED_NAME $EDITED_RT"
+
+# Anggota baru belum terdaftar di paket yang dibuat sebelum ia ada.
+code=$(req POST /api/admin/deposits "{\"communityId\":$COMMUNITY_ID,\"memberId\":$NEW_MEMBER_ID,\"packageId\":$PACKAGE_ID,\"amount\":10000,\"method\":\"CASH\"}")
+PKG_ERR=$(json error)
+[ "$code" = "400" ] && [ "$PKG_ERR" = "PACKAGE_NOT_ENROLLED" ] && pass "setoran ke paket yang belum diikuti ditolak (PACKAGE_NOT_ENROLLED)" || flop "validasi paket anggota" "$code $PKG_ERR"
+
+code=$(req POST /api/admin/deposits "{\"communityId\":$COMMUNITY_ID,\"memberId\":$NEW_MEMBER_ID,\"packageId\":999999,\"amount\":10000,\"method\":\"CASH\"}")
+PKG_ERR=$(json error)
+[ "$code" = "404" ] && [ "$PKG_ERR" = "PACKAGE_NOT_FOUND" ] && pass "setoran ke paket asing ditolak (PACKAGE_NOT_FOUND)" || flop "validasi paket komunitas" "$code $PKG_ERR"
+
+code=$(req POST /api/dev/payments/simulate "{\"communityId\":$COMMUNITY_ID,\"memberId\":$NEW_MEMBER_ID,\"packageId\":$PACKAGE_ID,\"amount\":10000}")
+PKG_ERR=$(json error)
+[ "$code" = "400" ] && [ "$PKG_ERR" = "PACKAGE_NOT_ENROLLED" ] && pass "invoice gateway ke paket yang belum diikuti ditolak" || flop "validasi paket gateway" "$code $PKG_ERR"
 
 code=$(req DELETE "/api/admin/communities/$COMMUNITY_ID/members/$NEW_MEMBER_ID")
 MODE=$(json mode)

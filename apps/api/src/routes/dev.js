@@ -64,6 +64,12 @@ async function createInvoice(input) {
         [input.packageId, input.communityId],
       );
       if (!pkg) return { error: 'PACKAGE_NOT_FOUND', status: 404 };
+
+      const [[enrolled]] = await pool.query(
+        'SELECT id FROM member_packages WHERE member_id = ? AND package_id = ? LIMIT 1',
+        [input.memberId, input.packageId],
+      );
+      if (!enrolled) return { error: 'PACKAGE_NOT_ENROLLED', status: 400 };
     }
 
     const occurredAt = new Date().toISOString().slice(0, 19).replace('T', ' ');

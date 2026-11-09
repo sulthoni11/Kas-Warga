@@ -126,10 +126,159 @@ adminRouter.get('/communities/:id/summary', read, async (req, res, next) => {
   }
 });
 
+// ------------------------------------------------------------------ analytics
+
+/** Nama bulan pendek Indonesia untuk grafik aplikasi mobile. */
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+adminRouter.get('/communities/:id/analytics', read, async (req, res, next) => {
+  try {
+    const communityId = idParam.parse(req.params.id);
+    const months = Math.min(24, Math.max(1, Number(req.query.months) || 12));
+
+    const summary = await buildCommunitySummary(communityId);
+    if (!summary) return res.status(404).json({ error: 'COMMUNITY_NOT_FOUND' });
+
+    const pool = getPool();
+
+    // Net kas masuk per bulan langsung dari LEDGER (DEPOSIT minus VOID), sehingga
+    // angka grafik selalu sama dengan angka dashboard.
+    const [cashRows] = await pool.query(
+      `SELECT DATE_FORMAT(le.occurred_at, '%Y-%m') AS ym, COALESCE(SUM(le.amount), 0) AS net
+         FROM ledger_entries le
+        WHERE le.community_id = ?
+        GROUP BY ym`,
+      [communityId],
+    );
+    const cashByMonth = new Map(cashRows.map((row) => [String(row.ym), Number(row.net)]));
+
+    // Sisa cicilan yang jatuh tempo di bulan tersebut dan masih belum dibayar.
+    const [dueRows] = await pool.query(
+      `SELECT DATE_FORMAT(i.due_date, '%Y-%m') AS ym,
+              COALESCE(SUM(i.amount - i.paid_amount), 0) AS due
+         FROM installments i
+         JOIN member_packages mp ON mp.id = i.member_package_id
+         JOIN members m ON m.id = mp.member_id
+        WHERE m.community_id = ?
+          AND i.status = 'DUE'
+          AND i.paid_amount < i.amount
+        GROUP BY ym`,
+      [communityId],
+    );
+    const dueByMonth = new Map(dueRows.map((row) => [String(row.ym), Number(row.due)]));
+
+    const series = [];
+    const now = new Date();
+    for (let index = months - 1; index >= 0; index -= 1) {
+      const cursor = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - index, 1));
+      const ym = cursor.toISOString().slice(0, 7);
+      series.push({
+        month: ym,
+        label: MONTH_LABELS[cursor.getUTCMonth()],
+        collected: cashByMonth.get(ym) ?? 0,
+        dueRemaining: dueByMonth.get(ym) ?? 0,
+      });
+    }
+
+    const [[stats]] = await pool.query(
+      `SELECT
+          COUNT(*) AS total,
+          SUM(i.status = 'PAID') AS paid,
+          SUM(i.status = 'WAIVED') AS waived,
+          COALESCE(SUM(CASE WHEN i.status = 'DUE' AND i.paid_amount < i.amount THEN i.amount - i.paid_amount ELSE 0 END), 0) AS dueRemaining,
+          COALESCE(SUM(CASE WHEN i.status = 'DUE' AND i.due_date <= CURDATE() AND i.paid_amount < i.amount THEN i.amount - i.paid_amount ELSE 0 END), 0) AS overdueAmount
+         FROM installments i
+         JOIN member_packages mp ON mp.id = i.member_package_id
+         JOIN members m ON m.id = mp.member_id
+        WHERE m.community_id = ?`,
+      [communityId],
+    );
+
+    return res.json({
+      communityId,
+      months,
+      series,
+      installmentStats: {
+        total: Number(stats.total),
+        paid: Number(stats.paid ?? 0),
+        waived: Number(stats.waived ?? 0),
+        dueRemaining: Number(stats.dueRemaining),
+        overdueAmount: Number(stats.overdueAmount),
+      },
+      packages: summary.packages,
+      rt: summary.rtSummary,
+      totals: summary.totals,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 /**
  * Menyelaraskan ulang cicilan dengan seluruh setoran CONFIRMED.
  * Dipakai sebagai tombol pemulihan manual dan oleh cron harian.
  */
+adminRouter.get('/communities/:id/members/:memberId/installments', read, async (req, res, next) => {
+  try {
+    const communityId = idParam.parse(req.params.id);
+    const memberId = idParam.parse(req.params.memberId);
+    const pool = getPool();
+    if (!(await communityOr404(res, communityId))) return undefined;
+    const [[member]] = await pool.query(
+      'SELECT id, name, phone_e164, rt FROM members WHERE id = ? AND community_id = ? LIMIT 1',
+      [memberId, communityId],
+    );
+    if (!member) return res.status(404).json({ error: 'MEMBER_NOT_FOUND' });
+
+    const [installments] = await pool.query(
+      `SELECT i.id, i.seq, i.amount, i.paid_amount, i.due_date, i.status,
+              p.id AS package_id, p.name AS package_name
+         FROM installments i
+         JOIN member_packages mp ON mp.id = i.member_package_id
+         JOIN packages p ON p.id = mp.package_id
+        WHERE mp.member_id = ?
+        ORDER BY p.due_date ASC, i.due_date ASC, i.seq ASC, i.id ASC`,
+      [memberId],
+    );
+
+    return res.json({
+      member: { id: member.id, name: member.name, phone: member.phone_e164, rt: member.rt ?? null },
+      installments: installments.map((row) => ({
+        id: Number(row.id),
+        seq: Number(row.seq),
+        amount: Number(row.amount),
+        paidAmount: Number(row.paid_amount),
+        dueDate: row.due_date,
+        status: row.status,
+        packageId: Number(row.package_id),
+        packageName: row.package_name,
+      })),
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+adminRouter.get('/communities/:id/members/:memberId/installments/stats', read, async (req, res, next) => {
+  try {
+    const communityId = idParam.parse(req.params.id);
+    const memberId = idParam.parse(req.params.memberId);
+    if (!(await communityOr404(res, communityId))) return undefined;
+    const [installments] = await pool.query(
+      `SELECT id, status FROM installments i
+       JOIN member_packages mp ON mp.id = i.member_package_id
+      WHERE mp.member_id = ?`,
+      [memberId],
+    );
+    const total = installments.length;
+    const lunas = installments.filter(i => i.status === 'PAID').length;
+    const waived = installments.filter(i => i.status === 'WAIVED').length;
+    return res.json({ total, lunas, waived });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 adminRouter.post('/communities/:id/installments/reconcile', write, async (req, res, next) => {
   try {
     const communityId = idParam.parse(req.params.id);
@@ -431,6 +580,27 @@ adminRouter.post('/deposits', write, async (req, res, next) => {
       [memberId, communityId],
     );
     if (!members[0]) return res.status(404).json({ error: 'MEMBER_NOT_FOUND' });
+
+    // Paket harus milik komunitas ini DAN anggota sudah terdaftar di paket itu,
+    // supaya setoran tidak menjadi "uang menggantung" tanpa cicilan tujuan.
+    if (packageId) {
+      const [packages] = await pool.query(
+        'SELECT id FROM packages WHERE id = ? AND community_id = ? LIMIT 1',
+        [packageId, communityId],
+      );
+      if (!packages[0]) return res.status(404).json({ error: 'PACKAGE_NOT_FOUND' });
+
+      const [enrolled] = await pool.query(
+        'SELECT id FROM member_packages WHERE member_id = ? AND package_id = ? LIMIT 1',
+        [memberId, packageId],
+      );
+      if (!enrolled[0]) {
+        return res.status(400).json({
+          error: 'PACKAGE_NOT_ENROLLED',
+          message: 'Anggota belum terdaftar di paket itu.',
+        });
+      }
+    }
 
     const [existing] = await pool.query(
       'SELECT id, amount, ledger_seq, status FROM deposits WHERE community_id = ? AND idempotency_key = ? LIMIT 1',

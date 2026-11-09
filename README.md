@@ -1,9 +1,9 @@
-# SCFF — Smart Community Festive Fund
+﻿# SCFF — Smart Community Festive Fund
 
 Platform pengelolaan dana sosial komunitas dengan **ledger append-only berantai hash**, portal
 transparansi publik, dan penagihan otomatis.
 
-Status: **v0.3.3 — aplikasi berjalan (M1–M4 + alokasi cicilan)**. Dokumen acuan: [`PRD.md`](./PRD.md) v1.1.4.
+Status: **v0.4.0 - aplikasi berjalan (M1-M4 + alokasi cicilan + aplikasi mobile Flutter)**. Dokumen acuan: [PRD.md](./PRD.md) v1.1.4.
 
 Panduan pemakaian langkah-demi-langkah: [`PANDUAN.md`](./PANDUAN.md).
 
@@ -98,6 +98,31 @@ scripts/
 docker-compose.yml
 ```
 
+## Aplikasi Mobile (Flutter)
+
+Aplikasi bendahara/ketua untuk Android di `apps/mobile` (Flutter 3.x, Provider, fl_chart).
+Tema "Bright Orange Clean" (putih + oranye cerah + teal/ungu pendamping), dark mode, dan
+transisi ala Cupertino.
+
+```bash
+cd apps/mobile
+flutter pub get
+flutter run --device <id>      # emulator: base URL default http://10.0.2.2:4000
+flutter build apk --release    # hasil: build/app/outputs/flutter-apk/app-release.apk
+flutter test && flutter analyze
+```
+
+- Login pakai akun pengurus (contoh demo `bendahara@gmail.com` / `12345678`). Sesi cookie
+  `scff_session` disimpan di secure storage perangkat.
+- Ponsel fisik: isi Alamat API server dengan IP LAN PC, mis. `http://192.168.1.9:4000`.
+- iOS build dilakukan di Mac (`flutter build ipa`) — kode sudah siap-iOS (transisi cupertino).
+- Fitur: dashboard kas + count-up, daftar anggota filter RT, detail cicilan per paket dengan
+  tombol Sinkronkan, catat setoran + koreksi (sheet iOS), paket CRUD, pengingat WhatsApp,
+  verifikasi ledger, dan Analisis Keuangan (grafik kas bulanan, donut paket, tunggakan RT).
+- API pendukung: `GET /api/admin/communities/:id/analytics?months=1..24` (deret bulanan net kas
+  dari ledger, sisa cicilan jatuh tempo, statistik cicilan, rekap RT/paket).
+
+
 ## Sudah jalan
 
 - Server Express + `/health` dan `/health/db`, header keamanan dasar, error handler.
@@ -112,11 +137,12 @@ docker-compose.yml
 - `appendEntry` dengan `GET_LOCK` per komunitas, `verifyChain` (VALID/INVALID + `firstBrokenSeq`), dan CLI `ledger-verify.js`.
 - Penguncian ledger 3 lapis: hak akses DB (`scff_app` hanya `SELECT`/`INSERT` pada tabel ledger), trigger `SIGNAL` yang menolak `UPDATE`/`DELETE` bahkan sebagai root, dan tidak ada kode yang menulis `UPDATE`.
 - `scripts/verify-ledger.sh`: migration + privileges + 14 pemeriksaan otomatis (rantai, genesis, konkurensi 10 paralel, penolakan DML, trigger, deteksi tamper, pemulihan).
-- `scripts/smoke-api.sh`: 50+ pemeriksaan API (login, RBAC 403, setoran, idempotensi, alokasi setoran ke cicilan, koreksi + VOID, verifikasi rantai, token publik, SSE, pembuatan paket + cicilan, tambah/hapus anggota dengan normalisasi telepon & RT, rekap per RT, pengingat dummy, CSV, anchor, webhook HMAC, settlement invoice dummy -> ledger idempoten).
+- `scripts/smoke-api.sh`: 59 pemeriksaan API (login, RBAC 403, setoran, idempotensi, alokasi setoran ke cicilan, koreksi + VOID, verifikasi rantai, token publik, SSE, pembuatan paket + cicilan, tambah/hapus anggota dengan normalisasi telepon & RT, rincian cicilan admin, analisis keuangan, rekap per RT, pengingat dummy, CSV, anchor, webhook HMAC, settlement invoice dummy -> ledger idempoten).
 - Alokasi setoran: setiap setoran CONFIRMED (tunai/admin maupun gateway) langsung melunasi cicilan tertua anggota. Setoran dengan paket hanya menyentuh paket itu; tanpa paket menyentuh semua paket. Pembayaran sebagian disimpan di `installments.paid_amount`, status menjadi `PAID` saat lunas. `scripts/reconcile-installments.js` menghitung ulang data lama.
 - Rekonsiliasi tahan-gagal: alokasi dicoba ulang otomatis; tersedia tombol **Sinkronkan cicilan** di panel anggota, endpoint `POST /api/admin/communities/:id/installments/reconcile`, dan cron 00:15 sebagai jaring pengaman. Satu anggota gagal tidak menghentikan anggota lain.
 - Migrasi tercatat di `schema_migrations`; `scripts/migrate.sh` melewati file yang sudah diterapkan sehingga deploy tidak mengulang DDL.
 - UI: login pengurus, panel admin (setoran, koreksi, anggota, paket, pengingat, link publik), dashboard warga dengan SSE.
+- Aplikasi mobile Flutter (tab Beranda/Anggota/Analisis/Alat) mengonsumsi API yang sama: 59/59 uji smoke, tema oranye soft ala iOS, grafik fl_chart.
 
 ## Belum diimplementasikan (sesuai milestone)
 

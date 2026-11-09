@@ -260,3 +260,25 @@ Satu anggota hanya bisa menerima satu pengingat per hari (dijaga unique key di d
 | Portal warga bilang "Tidak dapat menghubungi server" | API di port 4000 mati | Jalankan `npm run dev`, cek `/health` |
 | Tautan terbuka tapi alamatnya bukan `localhost:5173` | Vite pindah port karena 5173 terpakai | Buka alamat yang tertulis di log Vite, atau tutup proses lain di 5173 |
 | `bash: command not found` | Di PowerShell | Jalankan `bash`-script dari Git Bash |
+
+## 8. Aplikasi mobile (Flutter) - opsional
+
+Selain web, tersedia aplikasi Android untuk bendahara di `apps/mobile` (tema putih-oranye
+soft ala iPhone, dark mode, animasi, dan grafik analisis keuangan).
+
+```bash
+cd apps/mobile
+flutter pub get
+flutter run                # jalankan di emulator Android (API default http://10.0.2.2:4000)
+flutter build apk --release
+```
+
+- Semua fitur sama dengan panel web: dashboard kas, anggota + tunggakan, detail cicilan per
+  paket + tombol **Sinkronkan Cicilan**, catat setoran, koreksi, paket, pengingat, verifikasi
+  ledger, dan tab **Analisis** berisi grafik kas bulanan, sisa cicilan jatuh tempo, komposisi
+  paket, dan tunggakan per RT.
+- Ponsel fisik: isi kolom **Alamat API server** saat login dengan alamat PC, mis.
+  `http://192.168.1.9:4000` (IP LAN komputer tempat API berjalan). Uji coba tetap memakai
+  akun demo `bendahara@gmail.com` / `12345678`.
+- Hasil APK: `apps/mobile/build/app/outputs/flutter-apk/app-release.apk` (±51 MB) dan
+  `app-debug.apk` — salin ke HP lalu pasang (izinkan "instal dari sumber tak dikenal").
