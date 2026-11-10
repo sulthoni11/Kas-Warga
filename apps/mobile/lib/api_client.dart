@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -56,7 +57,11 @@ class ApiClient {
   }
 
   Future<void> login({required String base, required String email, required String password}) async {
-    final clean = base.trim().replaceAll(RegExp(r'/+$'), '');
+    var clean = base.trim().replaceAll(RegExp(r'/+$'), '');
+    // Toleransi bila user lupa menulis skema, mis. "10.0.2.2:4000".
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = 'http://$clean';
+    }
     final previous = baseUrl;
     baseUrl = clean.isEmpty ? defaultBase : clean;
     cookie = null;
@@ -99,7 +104,10 @@ class ApiClient {
       {Object? body, Map<String, String>? query}) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters:
         query == null || query.isEmpty ? null : query);
-    final res = await _raw(method, uri, jsonEncode(body));
+    // BODI HANYA DIKIRIM BILA ADA (request GET/menabak tanpa bodi tidak boleh
+    // membawa "null" — body-parser server menolaknya sebagai INVALID_JSON).
+    final payload = body == null ? null : jsonEncode(body);
+    final res = await _raw(method, uri, payload);
     if (res.statusCode >= 400) {
       throw _from(res);
     }
@@ -136,6 +144,12 @@ class ApiClient {
     final setCookie = res.headers['set-cookie'];
     if (setCookie != null && setCookie.isNotEmpty) {
       cookie = setCookie.split(';').first;
+    }
+    if (res.statusCode >= 400) {
+      debugPrint(
+        '[api] $method $uri → ${res.statusCode} :: '
+        '${utf8.decode(res.bodyBytes, allowMalformed: true)}',
+      );
     }
     if (res.statusCode == 401 && onUnauthorized != null) {
       onUnauthorized!();

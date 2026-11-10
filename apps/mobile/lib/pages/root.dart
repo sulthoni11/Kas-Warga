@@ -147,6 +147,10 @@ class _LoginPageState extends State<LoginPage> {
         return 'Email atau password salah.';
       case 'ACCOUNT_LOCKED':
         return 'Akun terkunci sebentar, coba lagi beberapa menit.';
+      case 'INVALID_JSON':
+        return 'Server menolak data kiriman. Hapus dan ulang install aplikasi, atau periksa alamat API.';
+      case 'VALIDATION_ERROR':
+        return 'Isian tidak sesuai format (contoh: tanpa @ di email).';
       default:
         return 'Login gagal (${error.code}).';
     }
