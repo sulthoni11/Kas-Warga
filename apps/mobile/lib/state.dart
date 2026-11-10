@@ -18,16 +18,21 @@ class CurrentUser {
 
 class CommunitySummaryItem {
   CommunitySummaryItem(
-      {required this.id, required this.name, required this.slug});
+      {required this.id,
+      required this.name,
+      required this.slug,
+      this.memberCount = 0});
   final int id;
   final String name;
   final String slug;
+  final int memberCount;
 
   factory CommunitySummaryItem.fromJson(Map<String, dynamic> json) =>
       CommunitySummaryItem(
         id: (json['id'] as num).toInt(),
         name: json['name'] as String? ?? '',
         slug: json['slug'] as String? ?? '',
+        memberCount: (json['memberCount'] as num?)?.toInt() ?? 0,
       );
 }
 
@@ -90,7 +95,12 @@ class AuthState extends ChangeNotifier {
           .whereType<Map<String, dynamic>>()
           .map(CommunitySummaryItem.fromJson));
     if (community == null || !communities.any((c) => c.id == community!.id)) {
-      community = communities.isEmpty ? null : communities.first;
+      // Default: komunitas dengan anggota terbanyak, bukan sekadar yang pertama
+      // (hindari terpilihnya komunitas uji kosong dari seed).
+      community = communities.isEmpty
+          ? null
+          : communities.reduce((a, b) =>
+              b.memberCount > a.memberCount ? b : a);
     }
   }
 

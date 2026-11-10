@@ -42,7 +42,10 @@ async function communityOr404(res, id) {
 adminRouter.get('/bootstrap', read, async (req, res, next) => {
   try {
     const [communities] = await getPool().query(
-      'SELECT id, name, slug, period_start, period_end, status FROM communities ORDER BY id ASC',
+      `SELECT c.id, c.name, c.slug, c.period_start, c.period_end, c.status,
+              (SELECT COUNT(*) FROM members m
+                WHERE m.community_id = c.id AND m.status = 'ACTIVE') AS member_count
+         FROM communities c ORDER BY c.id ASC`,
     );
 
     res.json({
@@ -54,6 +57,7 @@ adminRouter.get('/bootstrap', read, async (req, res, next) => {
         periodStart: row.period_start,
         periodEnd: row.period_end,
         status: row.status,
+        memberCount: Number(row.member_count ?? 0),
       })),
       providers: { payment: config.PAYMENT_PROVIDER, whatsapp: config.WA_PROVIDER },
     });
