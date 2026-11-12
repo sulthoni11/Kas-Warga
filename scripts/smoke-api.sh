@@ -209,6 +209,16 @@ PUBLIC_TOTAL=$(json totals.collected)
 PUBLIC_RT=$(json recentEntries.0.memberRt)
 [ -n "$PUBLIC_RT" ] && pass "portal publik menampilkan RT pada mutasi (RT $PUBLIC_RT)" || flop "RT di portal publik" "${PUBLIC_RT:-kosong}"
 
+code=$(req POST "/api/admin/communities/$COMMUNITY_ID/members/$MEMBER_ID/public-token")
+MEMBER_TOKEN=$(json token)
+MEMBER_NAME=$(json member.name)
+[ "$code" = "201" ] && [ -n "$MEMBER_TOKEN" ] && pass "tautan portal pribadi dibuat ($MEMBER_NAME)" || flop "token anggota" "$code"
+
+code=$(curl -s -o "$BODY" -w '%{http_code}' "$BASE/api/public/$MEMBER_TOKEN")
+MEMBER_VIEW=$(json memberView.name)
+MEMBER_VIEW_SCOPE=$(json scope)
+[ "$code" = "200" ] && [ "$MEMBER_VIEW" = "$MEMBER_NAME" ] && [ "$MEMBER_VIEW_SCOPE" = "MEMBER" ] && pass "portal pribadi hanya memuat posisi $MEMBER_NAME" || flop "portal pribadi" "$code ${MEMBER_VIEW:-kosong}"
+
 code=$(curl -s -o "$BODY" -w '%{http_code}' "$BASE/api/public/token-palsu-yang-tidak-ada-1234567890")
 [ "$code" = "410" ] && pass "token tidak valid ditolak (410)" || flop "token invalid" "$code"
 

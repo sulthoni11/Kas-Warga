@@ -8,6 +8,7 @@ import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'packages.dart';
+import 'portal.dart';
 
 /// Tab Alat: pintasan paket, rekonsiliasi, verifikasi ledger, daftar pengingat.
 class ToolsPage extends StatefulWidget {
@@ -131,97 +132,103 @@ class _ToolsPageState extends State<ToolsPage> {
     return Scaffold(
       body: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 62, 18, 110),
+        padding: const EdgeInsets.fromLTRB(16, 56, 16, 118),
         children: [
           Text('Alat', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
               'Masuk sebagai ${auth.user?.email ?? ''} · ${auth.user?.role ?? ''}',
               style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 18),
-          _ToolRow(
-            icon: Icons.inventory_2_rounded,
-            title: 'Kelola Paket',
-            subtitle: 'Lihat, tambah, dan hapus paket program kas',
-            onTap: () =>
-                Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => const PackagesPage())),
-          ),
-          if (canWrite) ...[
-            _ToolRow(
-              icon: Icons.sync_rounded,
-              title: 'Sinkronkan Semua Cicilan',
-              subtitle:
-                  'Hitung ulang alokasi setoran untuk cicilan seluruh anggota',
-              busy: _reconciling,
-              onTap: _reconcile,
-            ),
-            _ToolRow(
-              icon: Icons.verified_user_outlined,
-              title: 'Verifikasi Ledger',
-              subtitle: 'Tes integritas rantai hash kas',
-              busy: _verifying,
-              onTap: _verify,
-            ),
-          ],
-          const SizedBox(height: 22),
-          if (canWrite) ...[
-            Card(
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24)),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.notifications_active_outlined,
-                            color: Palette.orangeDeep, size: 22),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: Text('Pengingat WhatsApp',
-                                style:
-                                    Theme.of(context).textTheme.titleMedium)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Mengirim pengingat jatuh tempo <= 3 hari ke seluruh anggota',
-                      style: Theme.of(context).textTheme.bodySmall),
-                    const SizedBox(height: 14),
-                    GradientButton(
-                      label: 'Jalankan Sekarang',
-                      icon: Icons.send_rounded,
-                      busy: _runningReminder,
-                      onPressed: _runReminders,
-                    ),
-                    const SizedBox(height: 14),
-                    if (reminders.loading && reminders.rows.isEmpty)
-                      const ShimmerBox(height: 200, radius: 18)
-                    else if (reminders.rows.isEmpty)
-                      const Text(
-                        'Belum ada riwayat pengingat.',
-                        style: TextStyle(color: Palette.inkSoft, fontSize: 13),
-                      )
-                    else
-                      ...reminders.rows.take(12).map(
-                            (row) => _reminderTile(context, row),
-                          ),
-                    if (reminders.rows.length > 12)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          '+${reminders.rows.length - 12} riwayat lain',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                  ],
+          const SizedBox(height: 16),
+          IosListCard(
+            children: [
+              _ToolRow(
+                icon: Icons.inventory_2_rounded,
+                title: 'Kelola Paket',
+                subtitle: 'Lihat, tambah, dan hapus paket program kas',
+                onTap: () =>
+                    Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => const PackagesPage())),
+              ),
+              _ToolRow(
+                icon: Icons.public_rounded,
+                title: 'Portal Warga',
+                subtitle: 'Buka tautan portal komunitas atau posisi pribadi warga',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const PortalPage()),
                 ),
               ),
+              if (canWrite) ...[
+                _ToolRow(
+                  icon: Icons.sync_rounded,
+                  title: 'Sinkronkan Semua Cicilan',
+                  subtitle:
+                      'Hitung ulang alokasi setoran untuk cicilan seluruh anggota',
+                  busy: _reconciling,
+                  onTap: _reconcile,
+                ),
+                _ToolRow(
+                  icon: Icons.verified_user_outlined,
+                  title: 'Verifikasi Ledger',
+                  subtitle: 'Tes integritas rantai hash kas',
+                  busy: _verifying,
+                  onTap: _verify,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 22),
+          if (canWrite)
+            IosCard(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.notifications_active_outlined,
+                          color: Palette.orangeDeep, size: 19),
+                      const SizedBox(width: 9),
+                      Expanded(
+                          child: Text('Pengingat WhatsApp',
+                              style:
+                                  Theme.of(context).textTheme.titleMedium)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Mengirim pengingat jatuh tempo ≤ 3 hari ke seluruh anggota',
+                    style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(height: 14),
+                  GradientButton(
+                    label: 'Jalankan Sekarang',
+                    icon: Icons.send_rounded,
+                    busy: _runningReminder,
+                    onPressed: _runReminders,
+                  ),
+                  const SizedBox(height: 16),
+                  if (reminders.loading && reminders.rows.isEmpty)
+                    const ShimmerBox(height: 180, radius: 14)
+                  else if (reminders.rows.isEmpty)
+                    Text(
+                      'Belum ada riwayat pengingat.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    )
+                  else
+                    ...reminders.rows.take(12).map(
+                          (row) => _reminderTile(context, row),
+                        ),
+                  if (reminders.rows.length > 12)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '+${reminders.rows.length - 12} riwayat lain',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ],
         ],
       ),
     );
@@ -292,48 +299,49 @@ class _ToolRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: IosCard(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         onTap: busy ? null : onTap,
-        radius: 22,
-        shadow: true,
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: const BoxDecoration(
-                color: Palette.orangePastel,
-                shape: BoxShape.circle,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Palette.orangePastel,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 19, color: Palette.orangeDeep),
               ),
-              child: Icon(icon, size: 21, color: Palette.orangeDeep),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 3),
-                  Text(subtitle,
-                      style: Theme.of(context).textTheme.bodySmall,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                ],
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            busy
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.4, color: Palette.orange),
-                  )
-                : const Icon(Icons.chevron_right_rounded,
-                    color: Palette.inkSoft),
-          ],
+              const SizedBox(width: 6),
+              busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.2, color: Palette.orange),
+                    )
+                  : Icon(Icons.chevron_right_rounded,
+                      size: 19,
+                      color: Theme.of(context).textTheme.bodySmall?.color),
+            ],
+          ),
         ),
       ),
     );

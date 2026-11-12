@@ -20,6 +20,8 @@ adminRouter.use(requireAuth);
 
 const write = requireRole('BENDAHARA', 'SUPER_ADMIN');
 const read = requireRole('BENDAHARA', 'KETUA', 'SUPER_ADMIN');
+// Ketua boleh membagikan portal warga (baca-saja) walau tidak boleh menulis data.
+const linkWrite = requireRole('BENDAHARA', 'KETUA', 'SUPER_ADMIN');
 const superAdmin = requireRole('SUPER_ADMIN');
 
 const idParam = z.coerce.number().int().positive();
@@ -790,22 +792,51 @@ adminRouter.delete('/packages/:id', write, async (req, res, next) => {
 
 // ------------------------------------------------------------- public token
 
-adminRouter.post('/communities/:id/public-token', write, async (req, res, next) => {
+/** Token mentah hanya dikembalikan sekali; database menyimpan SHA-256-nya saja. */
+async function mintPublicToken({ communityId, memberId = null, scope }) {
+  const raw = randomBytes(32).toString('base64url');
+  await getPool().query(
+    'INSERT INTO public_tokens (community_id, member_id, token_hash, scope) VALUES (?, ?, ?, ?)',
+    [communityId, memberId, hashToken(raw), scope],
+  );
+  return { token: raw, url: `/s/${raw}` };
+}
+
+adminRouter.post('/communities/:id/public-token', linkWrite, async (req, res, next) => {
   try {
     const communityId = idParam.parse(req.params.id);
     if (!(await communityOr404(res, communityId))) return undefined;
 
-    const raw = randomBytes(32).toString('base64url');
-    await getPool().query(
-      'INSERT INTO public_tokens (community_id, token_hash, scope) VALUES (?, ?, ?)',
-      [communityId, hashToken(raw), 'COMMUNITY'],
-    );
-
-    return res.status(201).json({ token: raw, url: `/s/${raw}` });
+    const { token, url } = await mintPublicToken({ communityId, scope: 'COMMUNITY' });
+    return res.status(201).json({ token, url });
   } catch (error) {
     return next(error);
   }
 });
+
+/** Tautan pribadi: portal hanya menampilkan posisi dan mutasi satu anggota. */
+adminRouter.post(
+  '/communities/:id/members/:memberId/public-token',
+  linkWrite,
+  async (req, res, next) => {
+    try {
+      const communityId = idParam.parse(req.params.id);
+      const memberId = idParam.parse(req.params.memberId);
+      if (!(await communityOr404(res, communityId))) return undefined;
+
+      const [rows] = await getPool().query(
+        'SELECT id, name FROM members WHERE id = ? AND community_id = ? LIMIT 1',
+        [memberId, communityId],
+      );
+      if (!rows[0]) return res.status(404).json({ error: 'MEMBER_NOT_FOUND' });
+
+      const { token, url } = await mintPublicToken({ communityId, memberId, scope: 'MEMBER' });
+      return res.status(201).json({ token, url, member: { id: memberId, name: rows[0].name } });
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
 
 // ---------------------------------------------------------------- reminders
 

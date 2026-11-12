@@ -39,9 +39,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         onRefresh: () => context.read<AnalyticsState>().refresh(months: _months),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 62, 18, 110),
+          padding: const EdgeInsets.fromLTRB(16, 56, 16, 118),
           children: [
-            Text('Analisis Keuangan',
+            Text('Analisis',
                 style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 4),
             Text('Pandangan kas komunitas',
@@ -91,11 +91,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   List<Widget> _skeleton() => const [
-        ShimmerBox(height: 120, radius: 24),
+        ShimmerBox(height: 120, radius: 18),
         SizedBox(height: 16),
-        ShimmerBox(height: 220, radius: 24),
+        ShimmerBox(height: 220, radius: 18),
         SizedBox(height: 16),
-        ShimmerBox(height: 220, radius: 24),
+        ShimmerBox(height: 220, radius: 18),
       ];
 
   List<Map<String, dynamic>> _series(Map<String, dynamic> data) =>
@@ -119,7 +119,7 @@ class _InstallmentStatsCard extends StatelessWidget {
     final onTime = total <= 0 ? 0.0 : paid / total;
 
     return IosCard(
-      radius: 24,
+      radius: 18,
       padding: const EdgeInsets.all(20),
       shadow: true,
       child: Column(
@@ -272,21 +272,22 @@ class _MonthlyLineChart extends StatelessWidget {
     final hasData = values.any((v) => v > 0);
 
     return IosCard(
-      radius: 24,
-      padding: const EdgeInsets.fromLTRB(6, 18, 14, 12),
+      radius: 18,
+      padding: const EdgeInsets.fromLTRB(16, 18, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: const [
-                  Icon(Icons.swipe_up_alt_rounded,
-                      color: Palette.orangeDeep, size: 21),
-                  SizedBox(width: 10),
-                  Text('Kas masuk per bulan (net)'),
+                Row(children: [
+                  const Icon(Icons.swipe_up_alt_rounded,
+                      color: Palette.orangeDeep, size: 19),
+                  const SizedBox(width: 9),
+                  Text('Kas masuk per bulan',
+                      style: Theme.of(context).textTheme.titleMedium),
                 ]),
                 const SizedBox(height: 3),
                 Text('Setoran dikurangi koreksi (void)',
@@ -435,21 +436,22 @@ class _DueBarChart extends StatelessWidget {
     final hasData = values.any((v) => v > 0);
 
     return IosCard(
-      radius: 24,
-      padding: const EdgeInsets.fromLTRB(6, 18, 14, 12),
+      radius: 18,
+      padding: const EdgeInsets.fromLTRB(16, 18, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: const [
-                  Icon(Icons.timeline_rounded,
-                      color: Palette.coralDeep, size: 21),
-                  SizedBox(width: 10),
-                  Text('Sisa cicilan yang jatuh tempo'),
+                Row(children: [
+                  const Icon(Icons.timeline_rounded,
+                      color: Palette.coralDeep, size: 19),
+                  const SizedBox(width: 9),
+                  Text('Sisa cicilan jatuh tempo',
+                      style: Theme.of(context).textTheme.titleMedium),
                 ]),
                 const SizedBox(height: 3),
                 Text('Cicilan belum dibayar, dikelompokkan bulan jatuh temponya',
@@ -549,15 +551,17 @@ class _PackagePie extends StatelessWidget {
         withData.fold<int>(0, (sum, pkg) => sum + ((pkg['collected'] ?? 0) as num).toInt());
 
     return IosCard(
-      radius: 24,
+      radius: 18,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: const [
-            Icon(Icons.donut_small_rounded, color: Palette.purple, size: 21),
-            SizedBox(width: 10),
-            Text('Komposisi per paket'),
+          Row(children: [
+            const Icon(Icons.donut_small_rounded,
+                color: Palette.purple, size: 19),
+            const SizedBox(width: 9),
+            Text('Komposisi per paket',
+                style: Theme.of(context).textTheme.titleMedium),
           ]),
           const SizedBox(height: 16),
           if (withData.isEmpty)
@@ -645,15 +649,16 @@ class _ArrearsByRtCard extends StatelessWidget {
         : arrearsList.reduce((a, b) => a > b ? a : b);
 
     return IosCard(
-      radius: 24,
+      radius: 18,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: const [
-            Icon(Icons.home_work_outlined, color: Palette.pink, size: 21),
-            SizedBox(width: 10),
-            Text('Tunggakan per RT'),
+          Row(children: [
+            const Icon(Icons.home_work_outlined, color: Palette.pink, size: 19),
+            const SizedBox(width: 9),
+            Text('Tunggakan per RT',
+                style: Theme.of(context).textTheme.titleMedium),
           ]),
           const SizedBox(height: 16),
           if (withArrears.isEmpty)

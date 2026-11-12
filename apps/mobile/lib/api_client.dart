@@ -24,24 +24,30 @@ class ApiClient {
   static const _storage = FlutterSecureStorage();
   static const _keyBase = 'scff_base_url';
   static const _keyCookie = 'scff_cookie';
+  static const _keyWebBase = 'scff_web_base';
   static const defaultBase = 'http://10.0.2.2:4000';
 
   /// Dipanggil saat server menjawab 401: app kembali ke halaman login.
   void Function()? onUnauthorized;
 
   String baseUrl = defaultBase;
+
+  /// Alamat web portal (bukan API). Dipakai menyusun tautan `/s/<token>`
+  /// yang dibagikan ke warga. Boleh kosong bila belum diisi pengurus.
+  String webBase = '';
   String? cookie;
   bool restored = false;
 
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Cookie': ?cookie,
-      };
+    'Content-Type': 'application/json',
+    'Cookie': ?cookie,
+  };
 
   /// Muat baseUrl + cookie tersimpan, lalu cek masa berlaku lewat `/auth/me`.
   /// Mengembalikan true bila sesi masih berlaku.
   Future<bool> restore() async {
     baseUrl = await _storage.read(key: _keyBase) ?? defaultBase;
+    webBase = await _storage.read(key: _keyWebBase) ?? '';
     cookie = await _storage.read(key: _keyCookie);
     await _storage.write(key: _keyBase, value: baseUrl);
     restored = true;
@@ -56,7 +62,11 @@ class ApiClient {
     }
   }
 
-  Future<void> login({required String base, required String email, required String password}) async {
+  Future<void> login({
+    required String base,
+    required String email,
+    required String password,
+  }) async {
     var clean = base.trim().replaceAll(RegExp(r'/+$'), '');
     // Toleransi bila user lupa menulis skema, mis. "10.0.2.2:4000".
     if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
@@ -66,8 +76,11 @@ class ApiClient {
     baseUrl = clean.isEmpty ? defaultBase : clean;
     cookie = null;
     try {
-      final res = await _run('POST', '/api/auth/login',
-          body: {'email': email.trim(), 'password': password});
+      final res = await _run(
+        'POST',
+        '/api/auth/login',
+        body: {'email': email.trim(), 'password': password},
+      );
       if (res['user'] is! Map<String, dynamic>) {
         throw ApiException(500, 'LOGIN_FAILED');
       }
@@ -76,6 +89,32 @@ class ApiClient {
     } catch (_) {
       baseUrl = previous;
       rethrow;
+    }
+  }
+
+  /// Simpan alamat server tanpa login (dipakai portal warga).
+  Future<void> saveBaseUrl(String base) async {
+    var clean = base.trim().replaceAll(RegExp(r'/+$'), '');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = 'http://$clean';
+    }
+    baseUrl = clean.isEmpty ? defaultBase : clean;
+    await _storage.write(key: _keyBase, value: baseUrl);
+  }
+
+  /// Simpan alamat web portal untuk menyusun tautan warga.
+  Future<void> saveWebBase(String base) async {
+    var clean = base.trim().replaceAll(RegExp(r'/+$'), '');
+    if (clean.isNotEmpty &&
+        !clean.startsWith('http://') &&
+        !clean.startsWith('https://')) {
+      clean = 'https://$clean';
+    }
+    webBase = clean;
+    if (clean.isEmpty) {
+      await _storage.delete(key: _keyWebBase);
+    } else {
+      await _storage.write(key: _keyWebBase, value: clean);
     }
   }
 
@@ -100,10 +139,15 @@ class ApiClient {
 
   Future<Map<String, dynamic>> delete(String path) => send('DELETE', path);
 
-  Future<Map<String, dynamic>> send(String method, String path,
-      {Object? body, Map<String, String>? query}) async {
-    final uri = Uri.parse('$baseUrl$path').replace(queryParameters:
-        query == null || query.isEmpty ? null : query);
+  Future<Map<String, dynamic>> send(
+    String method,
+    String path, {
+    Object? body,
+    Map<String, String>? query,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl$path',
+    ).replace(queryParameters: query == null || query.isEmpty ? null : query);
     // BODI HANYA DIKIRIM BILA ADA (request GET/menabak tanpa bodi tidak boleh
     // membawa "null" — body-parser server menolaknya sebagai INVALID_JSON).
     final payload = body == null ? null : jsonEncode(body);
@@ -130,7 +174,11 @@ class ApiClient {
     return ApiException(res.statusCode, code, message);
   }
 
-  Future<Map<String, dynamic>> _run(String method, String path, {Object? body}) {
+  Future<Map<String, dynamic>> _run(
+    String method,
+    String path, {
+    Object? body,
+  }) {
     return send(method, path, body: body);
   }
 

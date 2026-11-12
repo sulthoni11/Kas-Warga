@@ -5,6 +5,7 @@ import '../api_client.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'portal.dart';
 import 'shell.dart';
 
 /// Pencabang utama: splash → login → shell.
@@ -90,22 +91,17 @@ class _LogoBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.32),
-        border: Border.all(color: Palette.orange.withValues(alpha: 0.15)),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Palette.gradientStart, Palette.gradientEnd],
-        ),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(size * 0.29),
+        color: Palette.orange,
+        boxShadow: [
           BoxShadow(
-            color: Palette.shadow,
-            blurRadius: 30,
-            offset: Offset(0, 14),
+            color: Palette.orange.withValues(alpha: 0.28),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Icon(Icons.savings_outlined,
+      child: Icon(Icons.savings_rounded,
           color: Palette.white, size: size * 0.46),
     );
   }
@@ -127,6 +123,7 @@ class _LoginPageState extends State<LoginPage> {
   final _password = TextEditingController();
   bool _busy = false;
   bool _obscure = true;
+  bool _advanced = false;
   String? _message;
 
   @override
@@ -140,7 +137,7 @@ class _LoginPageState extends State<LoginPage> {
   /// Terjemahkan kode API ke pesan bahasa Indonesia.
   String _humanError(Object error) {
     if (error is! ApiException) {
-      return ' tidak dapat terhubungan ke server. Periksa URL dan jaringan.';
+      return 'Tidak dapat terhubung ke server. Periksa URL dan jaringan.';
     }
     switch (error.code) {
       case 'INVALID_CREDENTIALS':
@@ -194,10 +191,10 @@ class _LoginPageState extends State<LoginPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  const _LogoBadge(size: 76),
-                  const SizedBox(height: 18),
+                  const _LogoBadge(size: 68),
+                  const SizedBox(height: 16),
                   Text(
-                    'Masuk Bendahara',
+                    'Masuk Pengurus',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 6),
@@ -205,10 +202,9 @@ class _LoginPageState extends State<LoginPage> {
                     'Kelola kas RW/RT Anda dari ponsel',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 26),
                   IosCard(
-                    shadow: true,
-                    padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -218,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                           autofillHints: const [AutofillHints.email],
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.alternate_email_rounded,
-                                color: Palette.orangeDeep, size: 20),
+                                color: Palette.inkSoft, size: 19),
                             hintText: 'email@rw.id',
                           ),
                           validator: (value) =>
@@ -226,7 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ? 'Email wajib diisi'
                                   : null,
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: _password,
                           obscureText: _obscure,
@@ -234,7 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                           onFieldSubmitted: (_) => _submit(),
                           decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.lock_rounded,
-                                color: Palette.orangeDeep, size: 20),
+                                color: Palette.inkSoft, size: 19),
                             hintText: 'Password',
                             suffixIcon: IconButton(
                               onPressed: () =>
@@ -243,7 +239,8 @@ class _LoginPageState extends State<LoginPage> {
                                 _obscure
                                     ? Icons.visibility_off_rounded
                                     : Icons.visibility_rounded,
-                                size: 20,
+                                size: 19,
+                                color: Palette.inkSoft,
                               ),
                             ),
                           ),
@@ -255,7 +252,6 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 18),
                         GradientButton(
                           label: 'Masuk',
-                          icon: Icons.login_rounded,
                           busy: _busy,
                           onPressed: _submit,
                         ),
@@ -263,22 +259,53 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  InputDecorator(
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.dns_rounded,
-                          size: 20, color: Palette.inkSoft),
-                      labelText: 'Alamat API server',
-                      helperText:
-                          'Emulator: default otomatis. HP fisik: alamat IP LAN, contoh http://192.168.1.9:4000',
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => const PortalPage()),
                     ),
-                    child: TextFormField(
+                    icon: const Icon(Icons.public_rounded, size: 18),
+                    label: const Text('Buka portal warga (tanpa login)'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Palette.orangeDeep,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.center,
+                    child: TextButton(
+                      onPressed: () =>
+                          setState(() => _advanced = !_advanced),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Palette.inkSoft,
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: Text(
+                        _advanced
+                            ? 'Sembunyikan pengaturan lanjutan'
+                            : 'Pengaturan lanjutan',
+                      ),
+                    ),
+                  ),
+                  if (_advanced) ...[
+                    const SizedBox(height: 6),
+                    TextFormField(
                       controller: _base,
                       keyboardType: TextInputType.url,
                       autocorrect: false,
-                      decoration: const InputDecoration.collapsed(
-                          hintText: 'http://10.0.2.2:4000'),
+                      decoration: const InputDecoration(
+                        labelText: 'Alamat API server',
+                        prefixIcon: Icon(Icons.dns_rounded,
+                            size: 19, color: Palette.inkSoft),
+                        helperText:
+                            'Emulator: default otomatis. HP fisik: alamat IP LAN, contoh http://192.168.1.9:4000',
+                        helperMaxLines: 2,
+                      ),
                     ),
-                  ),
+                  ],
                   if (_message != null) ...[
                     const SizedBox(height: 14),
                     Container(

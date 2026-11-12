@@ -9,16 +9,20 @@ Acuan kebutuhan: [`PRD.md`](./PRD.md). Ringkasan teknis: [`README.md`](./README.
 
 ## 1. Gambaran besar: siapa memakai apa
 
-SCFF punya dua pintu masuk.
+Pencatatan dilakukan **hanya dari aplikasi Android**. Web dipakai untuk melihat.
 
 | Pintu | Alamat | Siapa | Perlu login? |
 |---|---|---|---|
-| Panel pengurus | `/admin` | Bendahara, Ketua, Super Admin | **Ya** |
-| Portal warga | `/s/<token>` | Warga / siapa pun yang punya tautan | **Tidak** |
+| Aplikasi pengurus | APK Android **KasWarga** | Bendahara, Ketua, Super Admin | **Ya** |
+| Portal warga (web) | `/s/<token>` atau `/s` (tempel tautan) | Warga / siapa pun yang punya tautan | **Tidak** |
+| Portal warga (mobile) | layar **Portal warga** di APK | Warga / siapa pun yang punya tautan | **Tidak** |
 
 Bedanya:
-- **Panel pengurus** = tempat *mencatat* (input setoran, kelola anggota, buat paket, kirim pengingat).
-- **Portal warga** = tempat *melihat* (saldo, progres, riwayat, bukti keaslian catatan).
+- **Aplikasi pengurus** = tempat *mencatat* (input setoran, koreksi, kelola anggota, buat tautan).
+- **Portal warga** = tempat *melihat* (saldo, progres, riwayat, bukti keaslian catatan), tersedia di web dan mobile.
+
+> Panel admin web (`/admin`) **sudah dihapus**. Bila Anda menemukan panduan lama yang menyebut
+> "panel admin" atau "Masuk panel pengurus", abaikan — gunakan aplikasi Android.
 
 ---
 
@@ -42,19 +46,24 @@ bash scripts/verify-ledger.sh
 
 ---
 
-## 3. Login
+## 3. Login pengurus (aplikasi Android)
 
-Klik **Masuk panel pengurus**, atau langsung buka <http://localhost:5173/admin>.
-Form sudah terisi otomatis:
+Instal APK, buka aplikasi, lalu masuk dengan akun demo:
 
 | Email | Password | Peran | Bisa apa |
 |---|---|---|---|
-| `bendahara@gmail.com` | `12345678` | Bendahara | **Menulis**: setoran, koreksi, anggota, paket, pengingat, link publik |
-| `ketua@gmail.com` | `12345678` | Ketua | **Hanya membaca** + verifikasi + unduh CSV |
-| `admin@gmail.com` | `12345678` | Super Admin | Sama seperti bendahara **+ panel Kelola pengurus** |
+| `bendahara@gmail.com` | `12345678` | Bendahara | **Menulis**: setoran, koreksi, anggota, paket, tautan portal |
+| `ketua@gmail.com` | `12345678` | Ketua | **Hanya membaca** + verifikasi + tautan portal |
+| `admin@gmail.com` | `12345678` | Super Admin | Sama seperti bendahara |
 
-> Mencoba login sebagai **Ketua** adalah cara tercepat memahami pemisahan tugas: semua tombol
-> tulis hilang, dan muncul keterangan "Peran KETUA bersifat baca-saja".
+> Mencoba login sebagai **Ketua** adalah cara tercepat memahami pemisahan tugas: tombol tulis
+> hilang, tetapi Ketua tetap bisa membuat tautan portal.
+
+Warga **tidak perlu login** — cukup buka tautan `/s/<token>` di web, atau tekan
+**“Buka portal warga (tanpa login)”** di layar login aplikasi.
+
+> Bagian 4 dan seterusnya di bawah ini menjelaskan alur lama lewat panel web. Urutan kerjanya
+> sama di aplikasi Android; anggap istilah "panel" sebagai layar aplikasi.
 
 ---
 
@@ -136,7 +145,13 @@ Klik **Buat link publik** → muncul URL `http://localhost:5173/s/<token>` → k
 **Yang muncul:** halaman tanpa login berisi total terkumpul, target, progres tiap paket,
 20 mutasi terakhir, dan tombol **Verifikasi keaslian catatan**.
 
-> Token hanya ditampilkan sekali di panel. Simpan URL-nya seperti Anda membagikan tautan grup.
+**Tautan pribadi per warga.** Di daftar **Anggota**, klik ikon **tautan** pada baris anggota untuk
+membuat tautan `/s/<token>` yang hanya menampilkan posisi orang itu: total setoran, jumlah dan
+rincian tunggakan, serta riwayat mutasinya sendiri. Angka komunitas (terkumpul, target, progres
+paket) tetap agregat, jadi warga lain tidak bisa melihat rincian pribadi dari tautan ini.
+
+> Token hanya ditampilkan sekali di panel, baik tautan komunitas maupun tautan pribadi. Simpan
+> URL-nya seperti Anda membagikan tautan grup.
 
 ### Langkah 4 — Buktikan data real-time
 Buka portal warga di jendela/jendela samping, lalu **catat setoran baru** di panel admin.

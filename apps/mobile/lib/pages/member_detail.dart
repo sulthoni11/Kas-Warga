@@ -175,12 +175,11 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
         onRefresh: () => _load(silent: true),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 8, 18, 110),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 118),
           children: [
             IosCard(
-              radius: 22,
-              padding: const EdgeInsets.all(18),
-              shadow: true,
+              radius: 18,
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Hero(
@@ -311,8 +310,8 @@ class _PackageGroupState extends State<_PackageGroup> {
     final remaining = pkg.totalDue - pkg.totalPaid;
     final dark = Theme.of(context).brightness == Brightness.dark;
     return IosCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
+      radius: 18,
+      padding: const EdgeInsets.all(16),
       onTap: () => setState(() => _expanded = !_expanded),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

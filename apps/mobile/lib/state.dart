@@ -52,6 +52,13 @@ class AuthState extends ChangeNotifier {
   bool get canWrite =>
       authenticated && (user?.role == 'BENDAHARA' || user?.role == 'SUPER_ADMIN');
 
+  /// Ketua boleh membagikan portal warga (baca-saja) walau tidak boleh menulis.
+  bool get canShare =>
+      authenticated &&
+      (user?.role == 'BENDAHARA' ||
+          user?.role == 'KETUA' ||
+          user?.role == 'SUPER_ADMIN');
+
   Future<void> restore() async {
     restoring = true;
     notifyListeners();

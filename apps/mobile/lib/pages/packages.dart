@@ -129,9 +129,8 @@ class _PackageCard extends StatelessWidget {
     final pct = target > 0 ? collected / target : 0.0;
     final dark = Theme.of(context).brightness == Brightness.dark;
     return IosCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
-      shadow: true,
+      radius: 18,
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -309,22 +308,21 @@ class _CreatePackageFormState extends State<_CreatePackageForm> {
           Text('Jatuh tempo', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 8),
           InkWell(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             onTap: _pickDueDate,
             child: Container(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                  const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? Palette.darkBg
+                    ? Palette.darkFill
                     : Palette.cream,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Palette.border),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
                   const Icon(Icons.event_rounded,
-                      size: 20, color: Palette.orangeDeep),
+                      size: 19, color: Palette.orangeDeep),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -332,8 +330,9 @@ class _CreatePackageFormState extends State<_CreatePackageForm> {
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
-                  const Icon(Icons.expand_more_rounded,
-                      color: Palette.inkSoft, size: 20),
+                  Icon(Icons.expand_more_rounded,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                      size: 20),
                 ],
               ),
             ),

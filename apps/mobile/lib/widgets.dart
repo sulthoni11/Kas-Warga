@@ -147,14 +147,14 @@ class StaggeredAnimator extends StatelessWidget {
   }
 }
 
-/// Kartu iOS dengan sudut besar dan bayangan lembut.
+/// Kartu iOS: permukaan putih bersih, sudut membulat, tanpa garis tepi.
 class IosCard extends StatelessWidget {
   const IosCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(18),
     this.color,
-    this.radius = 24,
+    this.radius = 18,
     this.shadow = false,
     this.onTap,
     this.width,
@@ -174,30 +174,70 @@ class IosCard extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final card = DecoratedBox(
       decoration: BoxDecoration(
-        color: color ?? (dark ? Palette.darkCard : Palette.white),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: dark ? Palette.darkBorder : Palette.border),
         boxShadow: [
           if (shadow)
-            const BoxShadow(
-              color: Palette.shadow,
-              blurRadius: 22,
-              offset: Offset(0, 10),
+            BoxShadow(
+              color: dark ? Colors.black.withValues(alpha: 0.4) : Palette.shadow,
+              blurRadius: 18,
+              offset: const Offset(0, 6),
             ),
         ],
       ),
       child: Material(
-        type: MaterialType.transparency,
+        color: color ?? (dark ? Palette.darkCard : Palette.white),
         borderRadius: BorderRadius.circular(radius),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(radius),
           child: Padding(padding: padding, child: child),
         ),
       ),
     );
     if (width == null && height == null) return card;
     return SizedBox(width: width, height: height, child: card);
+  }
+}
+
+/// Daftar bergaya iOS: satu kartu putih dengan garis pemisah tipis.
+class IosListCard extends StatelessWidget {
+  const IosListCard({
+    super.key,
+    required this.children,
+    this.padding = EdgeInsets.zero,
+    this.radius = 18,
+    this.separatorIndent = 16,
+    this.shadow = false,
+  });
+  final List<Widget> children;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+  final double separatorIndent;
+  final bool shadow;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return IosCard(
+      radius: radius,
+      shadow: shadow,
+      padding: padding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (i, child) in children.indexed) ...[
+            if (i > 0)
+              Divider(
+                height: 0.5,
+                thickness: 0.5,
+                indent: separatorIndent,
+                color: dark ? Palette.darkBorder : Palette.border,
+              ),
+            child,
+          ],
+        ],
+      ),
+    );
   }
 }
 
@@ -212,6 +252,7 @@ class SoftProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: value.clamp(0, 1)),
       duration: const Duration(milliseconds: 800),
@@ -221,7 +262,8 @@ class SoftProgress extends StatelessWidget {
         child: LinearProgressIndicator(
           value: v <= 0 ? null : v,
           minHeight: height,
-          backgroundColor: track ?? Palette.orangePastel,
+          backgroundColor:
+              track ?? (dark ? Palette.darkFill : Palette.cream),
           valueColor: AlwaysStoppedAnimation(color),
         ),
       ),
@@ -245,11 +287,11 @@ class StatusBadge extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         text,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg),
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg),
       ),
     );
   }
@@ -276,21 +318,6 @@ class GradientButton extends StatefulWidget {
 class _GradientButtonState extends State<GradientButton> {
   bool _pressed = false;
 
-  final _decoration = BoxDecoration(
-    borderRadius: BorderRadius.circular(16),
-    gradient: const LinearGradient(colors: [
-      Palette.gradientStart,
-      Palette.gradientEnd,
-    ]),
-    boxShadow: const [
-      BoxShadow(
-        color: Palette.shadow,
-        blurRadius: 18,
-        offset: Offset(0, 9),
-      ),
-    ],
-  );
-
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null && !widget.busy;
@@ -299,68 +326,67 @@ class _GradientButtonState extends State<GradientButton> {
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1,
+        scale: _pressed ? 0.985 : 1,
         duration: const Duration(milliseconds: 120),
         child: AnimatedOpacity(
-          opacity: enabled ? 1 : 0.55,
+          opacity: enabled ? 1 : 0.45,
           duration: const Duration(milliseconds: 200),
-          child: DecoratedBox(
-            decoration: _decoration,
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                onTap: enabled ? widget.onPressed : null,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  height: 52,
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: widget.busy
-                        ? const Row(
-                            key: ValueKey('busy'),
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.4,
-                                  valueColor: AlwaysStoppedAnimation(
-                                      Palette.white),
-                                ),
+          child: Material(
+            color: Palette.orange,
+            borderRadius: BorderRadius.circular(14),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: enabled ? widget.onPressed : null,
+              child: Container(
+                height: 50,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: widget.busy
+                      ? const Row(
+                          key: ValueKey('busy'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                valueColor: AlwaysStoppedAnimation(
+                                    Palette.white),
                               ),
-                              SizedBox(width: 10),
-                              Text(
-                                'Memproses…',
-                                style: TextStyle(
-                                  color: Palette.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Memproses…',
+                              style: TextStyle(
+                                color: Palette.white,
+                                fontWeight: FontWeight.w600,
                               ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          key: const ValueKey('idle'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (widget.icon != null) ...[
+                              Icon(widget.icon,
+                                  color: Palette.white, size: 19),
+                              const SizedBox(width: 8),
                             ],
-                          )
-                        : Row(
-                            key: const ValueKey('idle'),
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (widget.icon != null) ...[
-                                Icon(widget.icon,
-                                    color: Palette.white, size: 20),
-                                const SizedBox(width: 8),
-                              ],
-                              Text(
-                                widget.label,
-                                style: const TextStyle(
-                                  color: Palette.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                            Text(
+                              widget.label,
+                              style: const TextStyle(
+                                color: Palette.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.2,
                               ),
-                            ],
-                          ),
-                  ),
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),
@@ -387,11 +413,10 @@ class IosSegmented<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: dark ? Palette.darkBg : Palette.cream,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: dark ? Palette.darkBorder : Palette.border),
+        color: dark ? Palette.darkFill : Palette.cream,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
@@ -400,20 +425,20 @@ class IosSegmented<T> extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => onChanged(entry.key),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
+                  duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOut,
-                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: entry.key == value
-                        ? (dark ? Palette.darkCard : Palette.white)
+                        ? (dark ? const Color(0xFF636366) : Palette.white)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     boxShadow: [
-                      if (entry.key == value && !dark)
-                        const BoxShadow(
-                          color: Palette.shadow,
-                          blurRadius: 8,
-                          offset: Offset(0, 3),
+                      if (entry.key == value)
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
                         ),
                     ],
                   ),
@@ -422,10 +447,11 @@ class IosSegmented<T> extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight:
-                          entry.key == value ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: entry.key == value
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                       color: entry.key == value
-                          ? Palette.orangeDeep
+                          ? (dark ? Palette.darkInk : Palette.ink)
                           : (dark ? Palette.darkInkSoft : Palette.inkSoft),
                     ),
                   ),
@@ -529,6 +555,7 @@ Future<T?> showIosSheet<T>(BuildContext context, Widget child,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.32),
     builder: (context) {
       final dark = Theme.of(context).brightness == Brightness.dark;
       return Padding(
@@ -539,23 +566,23 @@ Future<T?> showIosSheet<T>(BuildContext context, Widget child,
           decoration: BoxDecoration(
             color: dark ? Palette.darkCard : Palette.white,
             borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(28)),
+                const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Container(
-                width: 42,
+                width: 36,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: dark ? Palette.darkBorder : Palette.border,
-                  borderRadius: BorderRadius.circular(4),
+                  color: dark ? Palette.darkBorder : const Color(0xFFC7C7CC),
+                  borderRadius: BorderRadius.circular(3),
                 ),
               ),
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
                   child: child,
                 ),
               ),

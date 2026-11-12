@@ -155,17 +155,16 @@ class _DepositSheetState extends State<_DepositSheet> {
           ),
           const SizedBox(height: 8),
           InkWell(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             onTap: _pickMember,
             child: Container(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                  const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? Palette.darkBg
+                    ? Palette.darkFill
                     : Palette.cream,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Palette.border),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
@@ -283,18 +282,18 @@ class _DepositSheetState extends State<_DepositSheet> {
           color: selected
               ? Palette.orangePastel
               : (Theme.of(context).brightness == Brightness.dark
-                  ? Palette.darkBg
+                  ? Palette.darkFill
                   : Palette.cream),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: selected ? Palette.orangeLight : Palette.border),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 12.5,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-            color: selected ? Palette.orangeDeep : Palette.inkSoft,
+            fontWeight: FontWeight.w600,
+            color: selected
+                ? Palette.orangeDeep
+                : Theme.of(context).textTheme.bodySmall?.color,
           ),
         ),
       ),
@@ -452,6 +451,7 @@ class _CorrectionSheetState extends State<_CorrectionSheet> {
         TextFormField(
           controller: _reason,
           minLines: 2,
+          maxLines: 4,
           maxLength: 255,
           decoration: const InputDecoration(
             hintText: 'Alasan koreksi (min. 10 karakter)',

@@ -1,0 +1,14 @@
+{
+  "name": "KasWarga — Portal Kas RT",
+  "short_name": "KasWarga",
+  "description": "Portal transparansi kas RT/RW dengan buku besar berantai hash.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8F2",
+  "theme_color": "#F4760A",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

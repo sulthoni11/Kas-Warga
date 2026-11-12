@@ -57,12 +57,12 @@ node apps/api/scripts/reconcile-installments.js
 
 ## Alur singkat
 
-1. `npm run dev` → buka <http://localhost:5173/admin>
-2. Login `bendahara@gmail.com` → ringkasan **R2 09 Dukuh Tlobong** (6 anggota, 2 paket, 12 setoran). Tidak ada dropdown komunitas; aplikasi berjalan untuk satu komunitas.
-3. Catat setoran → "Terkumpul" naik, entri baru muncul, badge rantai tetap VALID.
-4. Klik **koreksi** pada entri → sistem membuat VOID + entri baru; entri lama tidak hilang.
-5. **Buat link publik** → buka `/s/<token>` di jendela lain, lalu catat setoran lagi: halaman itu berubah tanpa reload (SSE).
-6. Dashboard publik punya tombol **Verifikasi keaslian catatan**.
+1. `npm run dev` → portal warga di <http://localhost:5173> (tempel tautan di `/s`).
+2. Pencatatan dilakukan lewat **aplikasi Android** (login `bendahara@gmail.com`) → ringkasan **R2 09 Dukuh Tlobong** (6 anggota, 3 paket, 12 setoran). Tidak ada dropdown komunitas; aplikasi berjalan untuk satu komunitas.
+3. Catat setoran di mobile → "Terkumpul" naik, entri baru muncul, badge rantai tetap VALID.
+4. Koreksi entri di mobile → sistem membuat VOID + entri baru; entri lama tidak hilang.
+5. Menu **Alat → Portal Warga → Buat tautan komunitas** → buka `/s/<token>` di browser, lalu catat setoran lagi: halaman itu berubah tanpa reload (SSE).
+6. Dashboard publik (web & mobile) punya tombol **Verifikasi keaslian catatan**.
 
 ## Struktur
 
@@ -141,7 +141,7 @@ flutter test && flutter analyze
 - Alokasi setoran: setiap setoran CONFIRMED (tunai/admin maupun gateway) langsung melunasi cicilan tertua anggota. Setoran dengan paket hanya menyentuh paket itu; tanpa paket menyentuh semua paket. Pembayaran sebagian disimpan di `installments.paid_amount`, status menjadi `PAID` saat lunas. `scripts/reconcile-installments.js` menghitung ulang data lama.
 - Rekonsiliasi tahan-gagal: alokasi dicoba ulang otomatis; tersedia tombol **Sinkronkan cicilan** di panel anggota, endpoint `POST /api/admin/communities/:id/installments/reconcile`, dan cron 00:15 sebagai jaring pengaman. Satu anggota gagal tidak menghentikan anggota lain.
 - Migrasi tercatat di `schema_migrations`; `scripts/migrate.sh` melewati file yang sudah diterapkan sehingga deploy tidak mengulang DDL.
-- UI: login pengurus, panel admin (setoran, koreksi, anggota, paket, pengingat, link publik), dashboard warga dengan SSE.
+- UI web (baca-saja): landing, portal warga `/s` + `/s/:token` dengan SSE, halaman cara bayar. Panel admin web sudah dihapus — pencatatan hanya lewat aplikasi mobile.
 - Aplikasi mobile Flutter (tab Beranda/Anggota/Analisis/Alat) mengonsumsi API yang sama: 59/59 uji smoke, tema oranye soft ala iOS, grafik fl_chart.
 
 ## Belum diimplementasikan (sesuai milestone)

@@ -5,11 +5,14 @@ import { startReminderJob } from './jobs/reminders.js';
 
 const app = createApp();
 
-const server = app.listen(config.PORT, () => {
-  console.log(
-    `[api] http://localhost:${config.PORT} | payment=${config.PAYMENT_PROVIDER} | whatsapp=${config.WA_PROVIDER}`,
-  );
-});
+const server = app.listen(
+  { port: config.PORT, host: '::', ipv6Only: false },
+  () => {
+    console.log(
+      `[api] http://localhost:${config.PORT} | payment=${config.PAYMENT_PROVIDER} | whatsapp=${config.WA_PROVIDER}`,
+    );
+  },
+);
 
 startReminderJob();
 

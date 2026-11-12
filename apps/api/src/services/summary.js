@@ -5,7 +5,7 @@ import { getPool } from '../db.js';
  * Sumber angka "terkumpul" adalah LEDGER (bukan tabel deposits), sehingga
  * entri pembalik otomatis mengurangi total.
  */
-export async function buildCommunitySummary(communityId) {
+export async function buildCommunitySummary(communityId, { memberId = null } = {}) {
   const pool = getPool();
 
   const [[community]] = await pool.query(
@@ -53,15 +53,15 @@ export async function buildCommunitySummary(communityId) {
 
   const [recentEntries] = await pool.query(
     `SELECT le.seq, le.entry_type, le.amount, le.occurred_at, le.note,
-            le.ref_type, le.ref_id, m.name AS member_name, m.rt AS member_rt,
+            le.member_id, le.ref_type, le.ref_id, m.name AS member_name, m.rt AS member_rt,
             d.status AS deposit_status
        FROM ledger_entries le
        LEFT JOIN members m ON m.id = le.member_id
        LEFT JOIN deposits d ON d.id = le.ref_id AND le.ref_type = 'deposit'
-      WHERE le.community_id = ?
+      WHERE le.community_id = ?${memberId ? ' AND le.member_id = ?' : ''}
       ORDER BY le.seq DESC
       LIMIT 20`,
-    [communityId],
+    memberId ? [communityId, memberId] : [communityId],
   );
 
   const [arrearsRows] = await pool.query(
@@ -118,6 +118,7 @@ export async function buildCommunitySummary(communityId) {
       status: row.status,
       total: Number(row.total),
       arrears: arrearsDetail.reduce((total, item) => total + item.installments, 0),
+      arrearsAmount: arrearsDetail.reduce((total, item) => total + item.amount, 0),
       arrearsDetail,
     };
   });
@@ -151,6 +152,7 @@ export async function buildCommunitySummary(communityId) {
     recentEntries: recentEntries.map((row) => ({
       seq: Number(row.seq),
       entryType: row.entry_type,
+      memberId: row.member_id === null ? null : Number(row.member_id),
       amount: Number(row.amount),
       occurredAt: row.occurred_at,
       note: row.note,

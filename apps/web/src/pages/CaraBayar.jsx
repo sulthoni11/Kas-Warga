@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import SiteHeader from '../components/SiteHeader.jsx';
+import SiteFooter from '../components/SiteFooter.jsx';
+import { Badge, Card, Tick } from '../components/ui.jsx';
 
 const COMMUNITY_NAME = 'R2 09 Dukuh Tlobong';
 const COMMUNITY_PHONE = '0812-7777-0009';
@@ -10,284 +13,324 @@ const BANKS = [
     label: 'Bank BCA',
     number: '5111-0298-771-12',
     nameOnAccount: 'Nyai Retno Wati',
-    tag: 'BCA',
-    color: 'rose',
+    short: 'BCA',
+    tone: '#0060AF',
   },
   {
     id: 'mandiri',
     label: 'Bank Mandiri',
     number: '144-0009-877-3311',
     nameOnAccount: 'Nyai Retno Wati',
-    tag: 'MANDIRI',
-    color: 'emerald',
+    short: 'MDR',
+    tone: '#003D79',
   },
   {
     id: 'qris',
     label: 'QRIS',
     number: '0812-7777-0009',
     nameOnAccount: 'Kas Warga R2 09 Tlobong',
-    tag: 'QRIS',
-    color: 'sky',
+    short: 'QR',
+    tone: '#E4002B',
   },
 ];
 
 const PACKAGES = [
-  { label: 'Sembako Harian', options: [25000, 50000, 100000] },
-  { label: 'Tabungan Qurban', options: [250000, 500000, 1000000] },
+  { label: 'Sembako Harian', hint: 'Beras, minyak, telur', options: [25000, 50000, 100000] },
+  { label: 'Tabungan Qurban', hint: 'Cicilan menuju hari raya', options: [250000, 500000, 1000000] },
 ];
 
-const COLORS = {
-  rose: {
-    bg: 'bg-rose-50',
-    border: 'border-rose-200',
-    text: 'text-rose-900',
-    tagBg: 'bg-rose-600',
-    tagText: 'text-white',
-    accent: 'rose',
-  },
-  emerald: {
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200',
-    text: 'text-emerald-900',
-    tagBg: 'bg-emerald-600',
-    tagText: 'text-white',
-    accent: 'emerald',
-  },
-  sky: {
-    bg: 'bg-sky-50',
-    border: 'border-sky-200',
-    text: 'text-sky-900',
-    tagBg: 'bg-sky-600',
-    tagText: 'text-white',
-    accent: 'sky',
-  },
-};
+function rupiah(value) {
+  return `Rp ${Number(value).toLocaleString('id-ID')}`;
+}
 
 export default function CaraBayar() {
   const [method, setMethod] = useState('bca');
   const [packageName, setPackageName] = useState('Sembako Harian');
   const [amount, setAmount] = useState(50000);
-  const [copied, setCopied] = useState(null);
+  const [copied, setCopied] = useState(false);
 
-  const banks = BANKS;
-  const chosen = banks.find((b) => b.id === method) ?? banks[0];
-  const color = COLORS[chosen.color] ?? COLORS.rose;
-
+  const chosen = BANKS.find((b) => b.id === method) ?? BANKS[0];
   const selectedPackage = PACKAGES.find((p) => p.label === packageName) ?? PACKAGES[0];
-  const validAmounts = selectedPackage.options;
 
   function copyNumber() {
-    if (chosen.number) {
-      navigator.clipboard.writeText(chosen.number);
-      setCopied(chosen.id);
-      setTimeout(() => setCopied(null), 2000);
-    }
+    if (!chosen.number) return;
+    navigator.clipboard.writeText(chosen.number);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   function selectPackage(label) {
     setPackageName(label);
     const pkg = PACKAGES.find((p) => p.label === label);
-    if (pkg && pkg.options.length) setAmount(pkg.options[0]);
-  }
-
-  function selectAmount(val) {
-    if (validAmounts.includes(val)) setAmount(val);
+    if (pkg?.options.length) setAmount(pkg.options[0]);
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-16">
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sage-500">
-        Cara membayar
-      </p>
+    <div className="min-h-screen">
+      <SiteHeader />
 
-      <h1 className="mt-3 text-2xl font-semibold text-sage-900 sm:text-3xl">
-        Transfer / QRIS ke kas{' '}
-        <span className="text-gold">{COMMUNITY_NAME}</span>
-      </h1>
+      <main className="mx-auto w-full max-w-4xl px-4 py-10 pb-28 sm:px-6 sm:py-14 sm:pb-14">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-brand">
+          Cara membayar
+        </p>
+        <h1 className="mt-3 max-w-2xl text-[28px] font-extrabold leading-tight text-ink sm:text-[36px]">
+          Transfer atau QRIS ke kas <span className="text-brand">{COMMUNITY_NAME}</span>
+        </h1>
+        <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-muted">
+          Pilih paket dan nominal, lakukan pembayaran, lalu kirim bukti ke pengurus. Setoran akan
+          dicatat ke buku besar dan langsung tampil di portal warga.
+        </p>
 
-      <p className="mt-3 text-sm leading-relaxed text-sage-700">
-        Pilih metode, masukkan nominal, lalu lakukan pembayaran. Jika sudah, kirim bukti ke
-        pengurus kas agar setoran tercatat.
-      </p>
+        <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          {/* Langkah 1 */}
+          <Card className="p-5 sm:p-6">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-[12px] font-extrabold text-white">
+                1
+              </span>
+              <h2 className="text-[14.5px] font-extrabold text-ink">Pilih paket &amp; nominal</h2>
+            </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <section className="rounded-2xl border border-sage-100 bg-white/70 p-5">
-          <h2 className="text-sm font-semibold text-sage-900">1. Pilih paket &amp; nominal</h2>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => selectPackage('Sembako Harian')}
-              className={`rounded-xl border px-3 py-2 text-sm font-medium ${
-                packageName === 'Sembako Harian'
-                  ? 'border-sage-700 bg-sage-700 text-white'
-                  : 'border-sage-300 bg-white text-sage-700'
-              }`}
-            >
-              Sembako Harian
-            </button>
-            <button
-              type="button"
-              onClick={() => selectPackage('Tabungan Qurban')}
-              className={`rounded-xl border px-3 py-2 text-sm font-medium ${
-                packageName === 'Tabungan Qurban'
-                  ? 'border-sage-700 bg-sage-700 text-white'
-                  : 'border-sage-300 bg-white text-sage-700'
-              }`}
-            >
-              Tabungan Qurban
-            </button>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {validAmounts.map((val) => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => selectAmount(val)}
-                className={`rounded-xl border px-3 py-2 text-sm font-medium tabular-nums ${
-                  amount === val
-                    ? 'border-sage-700 bg-sage-700 text-white'
-                    : 'border-sage-300 bg-white text-sage-700'
-                }`}
-              >
-                Rp {val.toLocaleString('id-ID')}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-4 rounded-xl bg-sage-50 p-3 text-sm text-sage-700">
-            Nominal pilihan:{' '}
-            <span className="font-semibold text-sage-900">
-              Rp {amount.toLocaleString('id-ID')}
-            </span>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-sage-100 bg-white/70 p-5">
-          <h2 className="text-sm font-semibold text-sage-900">2. Pilih metode</h2>
-          <div className="mt-3 grid gap-2">
-            {banks.map((bank) => {
-              const isSelected = method === bank.id;
-              const bankColor = COLORS[bank.color] ?? COLORS.rose;
-              return (
-                <button
-                  key={bank.id}
-                  type="button"
-                  onClick={() => setMethod(bank.id)}
-                  className={`flex w-full items-center justify-between rounded-xl border ${
-                    isSelected ? `${bankColor.border} border-current` : 'border-sage-300'
-                  } ${isSelected ? bankColor.bg : 'bg-white'} px-3 py-2 text-sm ${
-                    isSelected ? bankColor.text : 'text-sage-700'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span
-                      className={`rounded-full ${bankColor.tagBg} px-2 py-0.5 text-[10px] font-semibold ${bankColor.tagText}`}
-                    >
-                      {bank.tag}
+            <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+              {PACKAGES.map((pkg) => {
+                const active = packageName === pkg.label;
+                return (
+                  <button
+                    key={pkg.label}
+                    type="button"
+                    onClick={() => selectPackage(pkg.label)}
+                    className={`rounded-2xl border p-3.5 text-left transition-base ${
+                      active
+                        ? 'border-brand bg-[#FFF4EA] ring-2 ring-brand/15'
+                        : 'border-line bg-white hover:border-brand/30'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-[13.5px] font-extrabold text-ink">{pkg.label}</span>
+                      {active && (
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand text-white">
+                          <Tick className="h-2.5 w-2.5" />
+                        </span>
+                      )}
                     </span>
-                    <span className="font-medium">{bank.label}</span>
-                  </span>
-                  <span className="text-[11px] text-sage-500">{bank.number}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      </div>
+                    <span className="mt-0.5 block text-[11.5px] text-muted">{pkg.hint}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-      {method && chosen && (
-        <section className="mt-6 rounded-2xl border border-sage-100 bg-white/80 p-5 sm:p-6">
-          <div className="flex items-start justify-between">
+            <p className="mt-5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-faint">
+              Nominal
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {selectedPackage.options.map((value) => {
+                const active = amount === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setAmount(value)}
+                    className={`rounded-full border px-4 py-2 text-[13px] font-bold tabular-nums transition-base ${
+                      active
+                        ? 'border-brand bg-brand text-white shadow-lift'
+                        : 'border-line bg-white text-ink hover:border-brand/40 hover:text-brand'
+                    }`}
+                  >
+                    {rupiah(value)}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-5 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
+              <span className="text-[12.5px] font-semibold text-muted">Nominal pilihan</span>
+              <span className="text-[17px] font-extrabold tabular-nums text-ink">
+                {rupiah(amount)}
+              </span>
+            </div>
+          </Card>
+
+          {/* Langkah 2 */}
+          <Card className="p-5 sm:p-6">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-[12px] font-extrabold text-white">
+                2
+              </span>
+              <h2 className="text-[14.5px] font-extrabold text-ink">Pilih metode</h2>
+            </div>
+
+            <div className="mt-4 space-y-2.5">
+              {BANKS.map((bank) => {
+                const active = method === bank.id;
+                return (
+                  <button
+                    key={bank.id}
+                    type="button"
+                    onClick={() => setMethod(bank.id)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-base ${
+                      active
+                        ? 'border-brand bg-[#FFF4EA] ring-2 ring-brand/15'
+                        : 'border-line bg-white hover:border-brand/30'
+                    }`}
+                  >
+                    <span
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-[10px] font-extrabold"
+                      style={{ color: bank.tone }}
+                    >
+                      {bank.short}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13.5px] font-extrabold text-ink">
+                        {bank.label}
+                      </span>
+                      <span className="block truncate text-[11.5px] tabular-nums text-muted">
+                        {bank.number}
+                      </span>
+                    </span>
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                        active ? 'border-brand' : 'border-line'
+                      }`}
+                      aria-hidden
+                    >
+                      {active && <span className="h-2.5 w-2.5 rounded-full bg-brand" />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mt-4 text-[11.5px] leading-relaxed text-faint">
+              Atas nama <span className="font-bold text-muted">{chosen.nameOnAccount}</span>. Kirim
+              bukti ke WhatsApp pengurus setelah membayar.
+            </p>
+          </Card>
+        </div>
+
+        {/* Rekening / QRIS */}
+        <Card className="mt-4 p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-sage-900">Metode &amp; rekening</h2>
-              <p className="mt-1 text-sm text-sage-700">
-                {chosen.label} - {chosen.number}
+              <h2 className="text-[14.5px] font-extrabold text-ink">Rekening tujuan</h2>
+              <p className="mt-1 text-[12.5px] text-muted">
+                {chosen.label} · {chosen.nameOnAccount}
               </p>
-              <p className="mt-1 text-xs text-sage-500">Atas nama {chosen.nameOnAccount}</p>
             </div>
             <button
               type="button"
               onClick={copyNumber}
-              className={`rounded-xl border ${color.border} ${color.bg} px-3 py-1.5 text-xs font-medium ${color.text} ${
-                copied === chosen.id ? 'ring-2 ring-offset-2 ring-sage-400' : ''
-              }`}
+              className="rounded-full border border-line bg-white px-4 py-2 text-[12px] font-bold text-ink transition-base hover:border-brand/40 hover:text-brand"
             >
-              {copied === chosen.id ? 'Tersalin' : 'Salin rekening'}
+              {copied ? 'Tersalin' : 'Salin nomor'}
             </button>
           </div>
 
-          <div className="mt-5 rounded-xl border border-sage-200 bg-white p-4 text-center">
-            <p className="text-xs uppercase tracking-wide text-sage-500">QRIS (jika memilih QRIS)</p>
-            <div className="mt-2 flex justify-center">
-              <div className="h-32 w-32 overflow-hidden rounded-xl border border-sage-300 bg-sage-100 p-3">
-                <svg viewBox="0 0 100 100" className="h-full w-full" preserveAspectRatio="xMidYMid meet">
-                  <rect x="5" y="5" width="90" height="90" rx="4" className="fill-sage-100 stroke-sage-300" />
-                  <rect x="15" y="15" width="10" height="10" className="fill-sage-900" />
-                  <rect x="30" y="15" width="10" height="10" className="fill-sage-900" />
-                  <rect x="45" y="15" width="10" height="10" className="fill-sage-900" />
-                  <rect x="60" y="15" width="10" height="10" className="fill-sage-900" />
-                  <rect x="75" y="15" width="10" height="10" className="fill-sage-900" />
-                  <rect x="15" y="35" width="10" height="10" className="fill-sage-900" />
-                  <rect x="30" y="35" width="10" height="10" className="fill-sage-900" />
-                  <rect x="45" y="35" width="10" height="10" className="fill-sage-900" />
-                  <rect x="60" y="35" width="10" height="10" className="fill-sage-900" />
-                  <rect x="75" y="35" width="10" height="10" className="fill-sage-900" />
-                  <rect x="15" y="55" width="10" height="10" className="fill-sage-900" />
-                  <rect x="30" y="55" width="10" height="10" className="fill-sage-900" />
-                  <rect x="45" y="55" width="10" height="10" className="fill-sage-900" />
-                  <rect x="60" y="55" width="10" height="10" className="fill-sage-900" />
-                  <rect x="75" y="55" width="10" height="10" className="fill-sage-900" />
-                  <rect x="15" y="75" width="10" height="10" className="fill-sage-900" />
-                  <rect x="30" y="75" width="10" height="10" className="fill-sage-900" />
-                  <rect x="45" y="75" width="10" height="10" className="fill-sage-900" />
-                  <rect x="60" y="75" width="10" height="10" className="fill-sage-900" />
-                  <rect x="75" y="75" width="10" height="10" className="fill-sage-900" />
+          {chosen.id === 'qris' ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-line bg-cream p-6 text-center">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-brand shadow-soft">
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2" />
+                  <rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2" />
+                  <rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2" />
+                  <path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM14 20.5h2.5M20.5 14v2.5" />
                 </svg>
-              </div>
+              </span>
+              <p className="mt-3 text-[13.5px] font-extrabold text-ink">
+                QRIS belum ditampilkan di demo ini
+              </p>
+              <p className="mx-auto mt-1 max-w-sm text-[12.5px] leading-relaxed text-muted">
+                Minta kode QRIS resmi ke pengurus lewat WhatsApp, lalu bayar sesuai nominal pilihan.
+              </p>
+              <a
+                href={`https://wa.me/${COMMUNITY_PHONE.replace(/-/g, '')}`}
+                className="mt-4 inline-flex rounded-full bg-brand px-4 py-2 text-[12.5px] font-bold text-white shadow-lift transition-base hover:bg-[#E96A00]"
+              >
+                Hubungi pengurus
+              </a>
             </div>
-            <p className="mt-2 text-xs text-sage-500">
-              QRIS ini hanya contoh. Scan QR dari aplikasi bank dan bayar sesuai nominal.
+          ) : (
+            <div className="mt-4 rounded-2xl border border-line bg-cream/70 p-5">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-faint">
+                Nomor rekening
+              </p>
+              <p className="mt-1 text-[22px] font-extrabold tracking-tight tabular-nums text-ink sm:text-[26px]">
+                {chosen.number}
+              </p>
+              <p className="mt-1 text-[12.5px] text-muted">
+                a.n. <span className="font-semibold text-ink">{chosen.nameOnAccount}</span>
+              </p>
+              <p className="mt-3 inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-muted">
+                <Tick className="h-3.5 w-3.5 text-brand" /> Periksa kembali nominal sebelum transfer
+              </p>
+            </div>
+          )}
+        </Card>
+
+        {/* Langkah melengkapi */}
+        <Card className="mt-4 p-5 sm:p-6">
+          <h2 className="text-[14.5px] font-extrabold text-ink">Setelah membayar</h2>
+          <ol className="mt-3 space-y-2.5 text-[13.5px] leading-relaxed text-muted">
+            {[
+              'Simpan bukti transfer atau tangkapan layar QRIS.',
+              `Kirim bukti ke WhatsApp pengurus: ${COMMUNITY_PHONE}.`,
+              'Bendahara mencatat setoran ke buku besar berantai hash.',
+              'Buka portal warga untuk memastikan setoran Anda sudah masuk.',
+            ].map((text, index) => (
+              <li key={text} className="flex gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brandPastel text-[10.5px] font-extrabold text-brand">
+                  {index + 1}
+                </span>
+                <span>{text}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-4 rounded-xl bg-cream px-3.5 py-2.5 text-[11.5px] leading-relaxed text-faint">
+            Tidak ada fitur self-input. Pencatatan tetap dilakukan bendahara agar tercatat resmi.
+          </p>
+        </Card>
+
+        {/* CTA portal */}
+        <div className="mt-6 flex flex-col items-start gap-4 rounded-card border border-line bg-white p-6 shadow-soft sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-brand">
+              Portal warga
+            </p>
+            <h2 className="mt-1 text-[18px] font-extrabold text-ink">Cek posisi setoran Anda</h2>
+            <p className="mt-1 max-w-md text-[13px] leading-relaxed text-muted">
+              Tempel tautan dari pengurus untuk melihat saldo, progres paket, dan riwayat mutasi.
             </p>
           </div>
-        </section>
-      )}
-
-      <section className="mt-6 rounded-2xl border border-gold/40 bg-white/80 p-5">
-        <h2 className="text-sm font-semibold text-sage-900">Cara melengkapi</h2>
-        <ol className="mt-3 space-y-2 text-sm text-sage-700 list-decimal list-inside">
-          <li>Pilih metode dan nominal di atas.</li>
-          <li>Lakukan pembayaran lewat bank / QRIS sesuai rekening / QR di atas.</li>
-          <li>Kirim bukti transfer / QR ke <a href={`https://wa.me/${COMMUNITY_PHONE}`} className="font-medium underline">{COMMUNITY_PHONE}</a>.</li>
-          <li>Bendahara akan mencatat setoran ke sistem; saldo Anda akan tampil di portal warga.</li>
-        </ol>
-        <p className="mt-3 text-xs text-sage-500">
-          Tidak ada fitur self-input. Pencatatan tetap dilakukan oleh bendahara agar transparan.
-        </p>
-      </section>
-
-      <div className="mt-8 rounded-xl border border-sage-300 bg-white/90 p-6 text-center sm:p-8">
-        <p className="text-xs uppercase tracking-wide text-sage-500">Portal warga</p>
-        <h2 className="mt-2 text-xl font-semibold text-sage-900">Buka portal warga</h2>
-        <p className="mt-2 text-sm text-sage-700">
-          Cek posisi dan riwayat setoran Anda setelah tercatat.
-        </p>
-        <div className="mt-4 flex justify-center">
           <Link
             to="/s"
-            className="inline-flex rounded-xl bg-sage-700 px-5 py-2 text-sm font-medium text-white"
+            className="shrink-0 rounded-full bg-brand px-5 py-2.5 text-[13px] font-bold text-white shadow-lift transition-base hover:bg-[#E96A00]"
           >
             Buka portal warga
           </Link>
         </div>
-        <p className="mt-2 text-xs text-sage-500">
-          Token portal akan diberikan oleh pengurus setelah setoran masuk.
-        </p>
+      </main>
+
+      {/* Ringkasan lengket untuk layar kecil */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-cream/95 px-4 py-3 backdrop-blur sm:hidden">
+        <div className="mx-auto flex max-w-4xl items-center gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-faint">
+              Ringkasan
+            </p>
+            <p className="truncate text-[13px] font-extrabold text-ink">
+              {chosen.label} · <span className="tabular-nums">{rupiah(amount)}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={copyNumber}
+            className="ml-auto shrink-0 rounded-full bg-brand px-4 py-2.5 text-[12.5px] font-bold text-white shadow-lift"
+          >
+            {copied ? 'Tersalin' : 'Salin nomor'}
+          </button>
+        </div>
       </div>
 
-      <footer className="mt-10 text-xs text-sage-500">
-        Smart Community Festive Fund · Rekening &amp; QRIS dalam mode dummy.
-      </footer>
-    </main>
+      <SiteFooter />
+    </div>
   );
 }

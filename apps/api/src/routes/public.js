@@ -48,20 +48,35 @@ publicRouter.get('/:token', async (req, res, next) => {
     const token = await resolveToken(req.params.token);
     if (!token) return res.status(410).json({ error: 'TOKEN_INVALID_OR_REVOKED' });
 
-    const summary = await buildCommunitySummary(Number(token.community_id));
+    const isPersonal = token.scope === 'MEMBER' && token.member_id !== null;
+    const memberId = isPersonal ? Number(token.member_id) : null;
+
+    // Tautan pribadi hanya menarik mutasi anggota itu; angka komunitas tetap agregat.
+    const summary = await buildCommunitySummary(Number(token.community_id), { memberId });
     if (!summary) return res.status(404).json({ error: 'COMMUNITY_NOT_FOUND' });
 
-    const scope = token.scope;
-    const members = scope === 'MEMBER'
-      ? summary.members.filter((member) => member.id === Number(token.member_id))
-      : [];
+    const member = isPersonal
+      ? summary.members.find((item) => item.id === memberId)
+      : null;
 
     return res.json({
       community: summary.community,
       totals: summary.totals,
       packages: summary.packages,
       recentEntries: summary.recentEntries,
-      memberView: members[0] ?? null,
+      // Nomor telepon & status sengaja tidak ikut: portal publik hanya nama, RT, nominal.
+      memberView: member
+        ? {
+            id: member.id,
+            name: member.name,
+            rt: member.rt,
+            total: member.total,
+            arrears: member.arrears,
+            arrearsAmount: member.arrearsAmount,
+            arrearsDetail: member.arrearsDetail,
+          }
+        : null,
+      scope: isPersonal ? 'MEMBER' : 'COMMUNITY',
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {

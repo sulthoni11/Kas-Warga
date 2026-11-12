@@ -61,13 +61,13 @@ class _MembersPageState extends State<MembersPage> {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 62, 18, 0),
+                padding: const EdgeInsets.fromLTRB(16, 56, 16, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Anggota',
                         style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                         '${filtered.length} dari ${members.length} anggota ditampilkan',
                         style: Theme.of(context).textTheme.bodySmall),
@@ -75,13 +75,14 @@ class _MembersPageState extends State<MembersPage> {
                     TextField(
                       onChanged: (value) => setState(() => _query = value),
                       decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search_rounded, size: 20),
+                        prefixIcon: Icon(Icons.search_rounded,
+                            size: 19, color: Palette.inkSoft),
                         hintText: 'Cari nama / RT…',
                       ),
                     ),
                     const SizedBox(height: 10),
                     SizedBox(
-                      height: 40,
+                      height: 38,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: [
@@ -96,12 +97,12 @@ class _MembersPageState extends State<MembersPage> {
             ),
             if (summary.loading && summary.summary == null)
               SliverPadding(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(16),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => const Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: ShimmerBox(height: 76, radius: 20),
+                      padding: EdgeInsets.only(bottom: 10),
+                      child: ShimmerBox(height: 64, radius: 16),
                     ),
                     childCount: 6,
                   ),
@@ -118,32 +119,32 @@ class _MembersPageState extends State<MembersPage> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
-                sliver: SliverList.separated(
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) {
-                    final member = filtered[i];
-                    return StaggeredAnimator(
-                      index: i,
-                      baseDelay: const Duration(milliseconds: 28),
-                      child: _MemberCard(
-                        member: member,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => MemberDetailPage(
-                                memberId: (member['id'] as num).toInt(),
-                                name: member['name'] ?? 'Anggota',
-                                rt: member['rt']?.toString(),
-                                phone: member['phone']?.toString(),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                sliver: SliverToBoxAdapter(
+                  child: IosListCard(
+                    children: [
+                      for (final (i, member) in filtered.indexed)
+                        StaggeredAnimator(
+                          index: i,
+                          baseDelay: const Duration(milliseconds: 28),
+                          child: _MemberCard(
+                            member: member,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => MemberDetailPage(
+                                    memberId: (member['id'] as num).toInt(),
+                                    name: member['name'] ?? 'Anggota',
+                                    rt: member['rt']?.toString(),
+                                    phone: member['phone']?.toString(),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
           ],
@@ -154,28 +155,27 @@ class _MembersPageState extends State<MembersPage> {
 
   Widget _chip(BuildContext context, String? value, String label) {
     final selected = _rtFilter == value;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
         onTap: () => setState(() => _rtFilter = value),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
           decoration: BoxDecoration(
             color: selected
                 ? Palette.orangePastel
-                : (Theme.of(context).brightness == Brightness.dark
-                    ? Palette.darkCard
-                    : Palette.white),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: selected ? Palette.orangeLight : Palette.border),
+                : (dark ? Palette.darkCard : Palette.white),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             label,
             style: TextStyle(
               fontSize: 12.5,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-              color: selected ? Palette.orangeDeep : Palette.inkSoft,
+              fontWeight: FontWeight.w600,
+              color: selected
+                  ? Palette.orangeDeep
+                  : (dark ? Palette.darkInkSoft : Palette.inkSoft),
             ),
           ),
         ),
@@ -199,77 +199,94 @@ class _MemberCard extends StatelessWidget {
         (sum, item) =>
             sum + ((item as Map<String, dynamic>)['amount'] ?? 0) as int);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return IosCard(
-      onTap: onTap,
-      radius: 20,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      shadow: true,
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: Palette.orangePastel,
-            child: Text(
-              ('${member['name'] ?? '?'}'.isNotEmpty)
-                  ? '${member['name']!}'[0].toUpperCase()
-                  : '?',
-              style: const TextStyle(
-                  fontSize: 18,
-                  color: Palette.orangeDeep,
-                  fontWeight: FontWeight.w800),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${member['name'] ?? ''}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Text(
-                  'RT ${member['rt'] ?? '—'} · terbukti ${formatRp(total)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: dark
+                      ? Palette.orangeDeep.withValues(alpha: 0.24)
+                      : Palette.orangePastel,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ],
-            ),
-          ),
-          if (arrears > 0)
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Palette.coralPastel,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${member['arrears']} tunggakan · ${formatRp(arrearsAmount).trim()}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: Palette.coralDeep,
+                child: Text(
+                  ('${member['name'] ?? '?'}'.isNotEmpty)
+                      ? '${member['name']!}'[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                      fontSize: 16,
+                      color: Palette.orangeDeep,
+                      fontWeight: FontWeight.w600),
                 ),
               ),
-            )
-          else
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: dark ? Palette.darkBg : Palette.mintPastel,
-                borderRadius: BorderRadius.circular(20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${member['name'] ?? ''}',
+                        style: Theme.of(context).textTheme.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 1),
+                    Text(
+                      'RT ${member['rt'] ?? '—'} · ${formatRp(total)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-              child: const Text('Lunas',
-                  style: TextStyle(
+              const SizedBox(width: 8),
+              if (arrears > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Palette.coralPastel,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${member['arrears']}x · ${formatRp(arrearsAmount)}',
+                    style: const TextStyle(
                       fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: Palette.mintDeep)),
-            ),
-        ],
+                      fontWeight: FontWeight.w600,
+                      color: Palette.coralDeep,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: dark
+                        ? Palette.mintDeep.withValues(alpha: 0.22)
+                        : Palette.mintPastel,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('Lunas',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Palette.mintDeep)),
+                ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right_rounded,
+                  size: 19,
+                  color: Theme.of(context).textTheme.bodySmall?.color),
+            ],
+          ),
+        ),
       ),
     );
   }

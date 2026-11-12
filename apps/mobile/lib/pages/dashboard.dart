@@ -30,14 +30,14 @@ class DashboardPage extends StatelessWidget {
                 child: _CommunityChips(communities: auth.communities),
               ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               sliver: SliverToBoxAdapter(
                 child: summary.loading && summary.summary == null
                     ? const _Skeleton()
                     : _DashboardBody(summary: summary, analytics: analytics),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            const SliverToBoxAdapter(child: SizedBox(height: 96)),
           ],
         ),
       ),
@@ -60,28 +60,31 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthState>();
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return SliverAppBar(
       pinned: false,
       floating: true,
       automaticallyImplyLeading: false,
-      titleSpacing: 18,
+      titleSpacing: 16,
+      toolbarHeight: 52,
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 18),
-          child: IconButton.filledTonal(
+          padding: const EdgeInsets.only(right: 16),
+          child: IconButton(
             onPressed: () async {
               await auth.logout();
             },
             style: IconButton.styleFrom(
-              backgroundColor: Palette.orangePastel,
-              foregroundColor: Palette.orangeDeep,
+              backgroundColor: dark ? Palette.darkFill : Palette.cream,
+              foregroundColor: dark ? Palette.darkInkSoft : Palette.inkSoft,
             ),
-            icon: const Icon(Icons.power_settings_new_rounded, size: 21),
+            icon: const Icon(Icons.power_settings_new_rounded, size: 19),
           ),
         ),
       ],
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             'Beranda',
@@ -103,11 +106,12 @@ class _CommunityChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthState>();
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: 40,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           for (final item in communities)
             Padding(
@@ -122,24 +126,17 @@ class _CommunityChips extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: item.id == auth.community?.id
                         ? Palette.orangePastel
-                        : (Theme.of(context).brightness == Brightness.dark
-                            ? Palette.darkCard
-                            : Palette.cream),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: item.id == auth.community?.id
-                          ? Palette.orangeLight
-                          : Palette.border,
-                    ),
+                        : (dark ? Palette.darkCard : Palette.white),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     item.name,
                     style: TextStyle(
                       fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: item.id == auth.community?.id
                           ? Palette.orangeDeep
-                          : Palette.inkSoft,
+                          : (dark ? Palette.darkInkSoft : Palette.inkSoft),
                     ),
                   ),
                 ),
@@ -165,11 +162,11 @@ class _Skeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Column(
       children: [
-        ShimmerBox(height: 150, radius: 26),
+        ShimmerBox(height: 148, radius: 18),
         SizedBox(height: 14),
-        ShimmerBox(height: 92, radius: 24),
+        ShimmerBox(height: 92, radius: 18),
         SizedBox(height: 14),
-        ShimmerBox(height: 150, radius: 24),
+        ShimmerBox(height: 150, radius: 18),
       ],
     );
   }
@@ -282,7 +279,7 @@ class _DashboardBody extends StatelessWidget {
           )
         else
           SizedBox(
-            height: 108,
+            height: 114,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: packages.length,
@@ -350,15 +347,17 @@ class _DashboardBody extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall),
           )
         else
-          ...recent.take(8).map((row) {
-            final entry = row as Map<String, dynamic>;
-            return _EntryRow(
-              entry: entry,
-              canCorrect: canWrite &&
-                  entry['refType'] == 'deposit' &&
-                  entry['depositStatus'] == 'CONFIRMED',
-            );
-          }),
+          IosListCard(
+            children: [
+              for (final row in recent.take(8))
+                _EntryRow(
+                  entry: row as Map<String, dynamic>,
+                  canCorrect: canWrite &&
+                      row['refType'] == 'deposit' &&
+                      row['depositStatus'] == 'CONFIRMED',
+                ),
+            ],
+          ),
       ],
     );
   }
@@ -376,69 +375,53 @@ class _CashCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Palette.gradientStart, Palette.gradientEnd],
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Palette.shadow,
-            blurRadius: 30,
-            offset: Offset(0, 14),
-          ),
-        ],
-      ),
+    final percent = (progress * 100).round();
+    return IosCard(
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.savings_rounded, color: Palette.white, size: 20),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: Palette.orangePastel,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: const Icon(Icons.savings_rounded,
+                    color: Palette.orangeDeep, size: 18),
+              ),
+              const SizedBox(width: 10),
               Text(
                 'Kas terkumpul',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13.5,
-                ),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           CountUp(collected,
-              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
+              style: const TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.8,
+              ),
               key: ValueKey(collected)),
           const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: progress.clamp(0, 1),
-              minHeight: 8,
-              backgroundColor: Colors.white.withValues(alpha: 0.3),
-              valueColor: const AlwaysStoppedAnimation(Palette.white),
-            ),
-          ),
+          SoftProgress(value: progress, height: 6),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(formatRp(target),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.92),
+              Text('dari target ${formatRp(target)}',
+                  style: Theme.of(context).textTheme.bodySmall),
+              Text('$percent%',
+                  style: const TextStyle(
                     fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                  )),
-              Text('${(progress * 100).round()}% dari target',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
+                    color: Palette.orangeDeep,
                   )),
             ],
           ),
@@ -470,23 +453,27 @@ class _StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(color: colorBg, shape: BoxShape.circle),
-            child: Icon(icon, size: 19, color: fg),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: fg),
           ),
           const SizedBox(height: 10),
           Text(label,
               style: TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Palette.inkSoft)),
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).textTheme.bodySmall?.color)),
           const SizedBox(height: 2),
           Text(sub,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               )),
         ],
@@ -509,20 +496,26 @@ class _ActionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return IosCard(
       onTap: onTap,
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      shadow: true,
+      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
               color: Palette.orangePastel,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(icon, size: 20, color: Palette.orangeDeep),
+            child: Icon(icon, size: 18, color: Palette.orangeDeep),
           ),
-          const SizedBox(width: 12),
-          Text(label, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleSmall),
+          ),
+          Icon(Icons.chevron_right_rounded,
+              size: 20, color: Theme.of(context).textTheme.bodySmall?.color),
         ],
       ),
     );
@@ -540,26 +533,26 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final amount = ((entry['amount'] ?? 0) as num).toInt();
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onLongPress: canCorrect
           ? () => showCorrectionSheet(context, entry)
           : null,
-      child: IosCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        radius: 18,
-        onTap: canCorrect ? () => showCorrectionSheet(context, entry) : null,
+      onTap: canCorrect ? () => showCorrectionSheet(context, entry) : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(9),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isNegative ? Palette.coralPastel : Palette.mintPastel,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 isNegative
                     ? Icons.replay_circle_filled_rounded
                     : Icons.trending_up_rounded,
-                size: 18,
+                size: 17,
                 color: isNegative ? Palette.coralDeep : Palette.mintDeep,
               ),
             ),
@@ -588,11 +581,12 @@ class _EntryRow extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               formatRp(amount),
               style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
                 color: isNegative ? Palette.coralDeep : Palette.mintDeep,
               ),
             ),

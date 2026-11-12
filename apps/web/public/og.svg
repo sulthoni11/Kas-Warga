@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="KasWarga">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF8F2" />
+      <stop offset="1" stop-color="#FFE9D6" />
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF8A00" />
+      <stop offset="1" stop-color="#FFA840" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <circle cx="1080" cy="80" r="260" fill="#FFE3C2" opacity=".55" />
+  <circle cx="1120" cy="600" r="200" fill="#FFD3A8" opacity=".4" />
+  <g transform="translate(80,72)">
+    <rect width="76" height="76" rx="20" fill="url(#mark)" />
+    <path d="M22.5 29 28 35l-8 1.3z" fill="#fff" />
+    <path d="M53.5 29 48 35l8 1.3z" fill="#fff" />
+    <circle cx="38" cy="41" r="17.5" fill="#fff" />
+    <circle cx="45.5" cy="36" r="2.2" fill="#F4760A" />
+    <ellipse cx="46" cy="45" rx="6.5" ry="5" fill="#FFE3C2" />
+    <circle cx="43.8" cy="45" r="1.2" fill="#F4760A" />
+    <circle cx="48.2" cy="45" r="1.2" fill="#F4760A" />
+  </g>
+  <text x="180" y="128" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="44" font-weight="800" fill="#2A2621">KasWarga</text>
+  <text x="80" y="270" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="72" font-weight="800" fill="#2A2621">Kas RT tercatat rapi,</text>
+  <text x="80" y="356" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="72" font-weight="800" fill="#F4760A">tidak bisa diubah diam-diam.</text>
+  <text x="80" y="424" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="28" font-weight="500" fill="#6F665D">Buku besar berantai hash SHA-256 · portal warga tanpa akun · pembaruan langsung</text>
+  <g font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="24" font-weight="700">
+    <rect x="80" y="470" width="190" height="58" rx="29" fill="#fff" stroke="#F3E7DC" />
+    <text x="112" y="507" fill="#2A2621">Tanpa login</text>
+    <rect x="290" y="470" width="224" height="58" rx="29" fill="#fff" stroke="#F3E7DC" />
+    <text x="322" y="507" fill="#2A2621">Hash SHA-256</text>
+    <rect x="534" y="470" width="196" height="58" rx="29" fill="#fff" stroke="#F3E7DC" />
+    <text x="566" y="507" fill="#2A2621">Real-time</text>
+  </g>
+</svg>
